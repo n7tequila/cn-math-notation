@@ -105,6 +105,31 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect(katex.renderToString(EX1)).toContain("cmn-guide");
   });
 
+  test("递等式 \\dengshi{…}：程序按运算顺序逐步化简", () => {
+    const html = katex.renderToString(String.raw`\dengshi{25\times(40+4)}`, { displayMode: true });
+    expect(html).toContain("1100");
+    expect(html).toContain("44");
+    // MathML 里能看到三行：原式、25×44、1100
+    expect((html.match(/<mtr>/g) || []).length).toBe(3);
+  });
+
+  test("递等式 \\dengshi*{…}：直写，与语义式结果相同", () => {
+    const sem = katex.renderToString(String.raw`\dengshi{1+2+3}`);
+    const layout = katex.renderToString(String.raw`\dengshi*{1+2+3 \\ 3+3 \\ 6}`);
+    const strip = (h: string) => h.replace(/<annotation[\s\S]*?<\/annotation>/, "");
+    expect(strip(layout)).toBe(strip(sem));
+  });
+
+  test("递等式英文别名 \\stepeq 与报错", () => {
+    expect(katex.renderToString(String.raw`\stepeq{1+2+3}`)).toContain("6");
+    expect(() => katex.renderToString(String.raw`\dengshi{7\div2}`)).toThrow(/除不尽/);
+    expect(katex.renderToString(String.raw`\dengshi{7\div2}`, { throwOnError: false })).toContain("katex-error");
+  });
+
+  test("递等式里可以写分数等普通公式（直写）", () => {
+    expect(katex.renderToString(String.raw`\dengshi*{\frac{1}{2}+\frac{1}{2} \\ 1}`)).toContain("mfrac");
+  });
+
   test("重复注册无副作用", () => {
     register(katex as unknown as KatexLike);
     expect(katex.renderToString(EX1)).toContain("cmn-shushi");

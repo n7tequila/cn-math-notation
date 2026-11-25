@@ -92,3 +92,18 @@ export function semanticTex(example: SemanticExample): string {
   const opts = example.options === undefined ? "" : `[${example.options}]`;
   return `\\shushi${opts}{${example.expr}}`;
 }
+
+/** 递等式例子：整段 TeX。语义式只写算式；直写用 \\ 分行。 */
+export interface DengshiExample {
+  readonly id: string;
+  readonly name: string;
+  readonly tex: string;
+}
+
+export const DENGSHI_EXAMPLES: readonly DengshiExample[] = [
+  { id: "ds-paren", name: "有括号 25×(40+4)", tex: String.raw`\dengshi{25\times(40+4)}` },
+  { id: "ds-mixed", name: "先乘除后加减 25×4+36÷6", tex: String.raw`\dengshi{25\times4+36\div6}` },
+  { id: "ds-order", name: "乘法优先 20−5+3×4", tex: String.raw`\dengshi{20-5+3\times4}` },
+  { id: "ds-bracket", name: "中括号 [100−(20+30)]÷5", tex: String.raw`\dengshi{[100-(20+30)]\div5}` },
+  { id: "ds-layout", name: "直写（简便计算）25×(40+4)", tex: String.raw`\dengshi*{25\times(40+4) \\ 25\times40+25\times4 \\ 1000+100 \\ 1100}` },
+];

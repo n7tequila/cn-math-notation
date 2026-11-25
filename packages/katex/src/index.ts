@@ -1,11 +1,13 @@
 /**
- * KaTeX 插件：注册 \shushi*（直写布局）及英文别名 \vertical*。
+ * KaTeX 插件：注册 \shushi / \shushi*（竖式，英文别名 \vertical）与 \dengshi / \dengshi*（递等式，英文别名 \stepeq）。
  *
  * 依赖 KaTeX 的不稳定接口 __defineFunction / __defineMacro（双下划线前缀），
  * 已在 KaTeX 0.19.1 上验证；peerDependencies 锁在 ~0.19.1。
  * 语义式 \shushi{403-167} 由程序算出竖式过程。
  */
 import {
+  buildDengshi,
+  buildDengshiLayout,
   DEFAULT_STYLE,
   ExpressionError,
   LayoutSyntaxError,
@@ -22,6 +24,7 @@ export interface KatexLike {
   readonly ParseError: new (message: string) => Error;
   __defineFunction(spec: unknown): void;
   __defineMacro(name: string, body: string): void;
+  __parse(expression: string, options?: Record<string, unknown>): unknown[];
 }
 
 interface RawArg {
@@ -38,6 +41,9 @@ interface ShushiNode {
 const LAYOUT_FN = "\\cmn@shushilayout";
 const SEMANTIC_FN = "\\cmn@shushisemantic";
 const COMMAND_NAMES = ["\\shushi", "\\vertical"] as const;
+const DENGSHI_LAYOUT_FN = "\\cmn@dengshilayout";
+const DENGSHI_SEMANTIC_FN = "\\cmn@dengshisemantic";
+const DENGSHI_NAMES = ["\\dengshi", "\\stepeq"] as const;
 
 /**
  * KaTeX 在 raw 参数里仍会展开宏（原型实测 0.19.1）：`~` 会变成 `\nobreakspace`，
@@ -161,5 +167,36 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
 
   for (const name of COMMAND_NAMES) {
     katex.__defineMacro(name, `\\@ifstar${LAYOUT_FN}${SEMANTIC_FN}`);
+  }
+  registerDengshi(katex);
+}
+
+/**
+ * 递等式：本库算出每一步、拼成 aligned 环境的 TeX，再交给 KaTeX 自己解析成节点嵌回当前公式，
+ * 所以行内的分数、括号等都按 KaTeX 的排版来。
+ */
+function registerDengshi(katex: KatexLike): void {
+  const define = (fnName: string, build: (raw: string) => string, label: string) =>
+    katex.__defineFunction({
+      type: "ordgroup",
+      names: [fnName],
+      numArgs: 1,
+      argTypes: ["raw"],
+      allowedInText: true,
+      handler: (context: { parser: { mode: string } }, args: RawArg[]) => {
+        let tex: string;
+        try {
+          tex = build(normalizeRaw(args[0]!.string));
+        } catch (e) {
+          if (e instanceof ExpressionError) throw new katex.ParseError(`${label}：${e.message}`);
+          throw e;
+        }
+        return { type: "ordgroup", mode: context.parser.mode, body: katex.__parse(tex, { throwOnError: true }) };
+      },
+    });
+  define(DENGSHI_LAYOUT_FN, buildDengshiLayout, "\\dengshi*");
+  define(DENGSHI_SEMANTIC_FN, buildDengshi, "\\dengshi");
+  for (const name of DENGSHI_NAMES) {
+    katex.__defineMacro(name, `\\@ifstar${DENGSHI_LAYOUT_FN}${DENGSHI_SEMANTIC_FN}`);
   }
 }

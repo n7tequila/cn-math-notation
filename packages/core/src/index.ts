@@ -1,4 +1,15 @@
 export type * from "./model.ts";
+export {
+  buildDengshi,
+  buildDengshiLayout,
+  dengshiSteps,
+  dengshiTex,
+  parseDengshiLines,
+  parseArith,
+  simplifySteps,
+  arithToTex,
+  type ArithNode,
+} from "./dengshi/index.ts";
 export { buildSemantic, parseExpression, ExpressionError, DIGIT_COLORS, type Expression } from "./semantic/index.ts";
 export { parseLayout, tokenize, assignColumns, LayoutSyntaxError } from "./parse-layout.ts";
 export {

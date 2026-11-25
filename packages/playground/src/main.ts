@@ -2,11 +2,12 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 import { register, type KatexLike } from "@cn-math-notation/katex";
 import type { CarryAt, MulMode, OperatorPlacement, ProcessMode } from "@cn-math-notation/core";
-import { EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
+import { DENGSHI_EXAMPLES, EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
 
 const STORAGE_KEY = "cmn-playground-v1";
 const ALL_EXAMPLES = "__all__";
 const ALL_SEMANTIC = "__all_semantic__";
+const ALL_DENGSHI = "__all_dengshi__";
 
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -114,13 +115,18 @@ function fillExamples(): void {
   const layout = document.createElement("optgroup");
   layout.label = "直写布局（逐行写）";
   layout.append(...EXAMPLES.map((ex, i) => option(`l${i}`, ex.name)), option(ALL_EXAMPLES, "全部直写布局例子"));
-  exampleSelect.append(semantic, layout);
+  const dengshi = document.createElement("optgroup");
+  dengshi.label = "递等式";
+  dengshi.append(...DENGSHI_EXAMPLES.map((ex, i) => option(`d${i}`, ex.name)), option(ALL_DENGSHI, "全部递等式例子"));
+  exampleSelect.append(semantic, layout, dengshi);
 }
 
 function exampleText(value: string): string {
   if (value === ALL_EXAMPLES) return EXAMPLES.map(toTex).join("\n\n");
   if (value === ALL_SEMANTIC) return SEMANTIC_EXAMPLES.map(semanticTex).join("\n\n");
+  if (value === ALL_DENGSHI) return DENGSHI_EXAMPLES.map((ex) => ex.tex).join("\n\n");
   const index = Number(value.slice(1));
+  if (value.startsWith("d")) return DENGSHI_EXAMPLES[index]!.tex;
   return value.startsWith("s") ? semanticTex(SEMANTIC_EXAMPLES[index]!) : toTex(EXAMPLES[index]!);
 }
 
