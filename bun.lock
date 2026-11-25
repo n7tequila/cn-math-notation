@@ -1,0 +1,62 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "cn-math-notation-workspace",
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "~6.0.0",
+      },
+    },
+    "packages/core": {
+      "name": "@cn-math-notation/core",
+      "version": "0.0.0",
+    },
+    "packages/katex": {
+      "name": "@cn-math-notation/katex",
+      "version": "0.0.0",
+      "dependencies": {
+        "@cn-math-notation/core": "workspace:*",
+      },
+      "devDependencies": {
+        "katex": "0.19.1",
+      },
+      "peerDependencies": {
+        "katex": "~0.19.1",
+      },
+    },
+    "packages/playground": {
+      "name": "@cn-math-notation/playground",
+      "version": "0.0.0",
+      "dependencies": {
+        "@cn-math-notation/core": "workspace:*",
+        "@cn-math-notation/katex": "workspace:*",
+        "katex": "0.19.1",
+      },
+    },
+  },
+  "packages": {
+    "@cn-math-notation/core": ["@cn-math-notation/core@workspace:packages/core"],
+
+    "@cn-math-notation/katex": ["@cn-math-notation/katex@workspace:packages/katex"],
+
+    "@cn-math-notation/playground": ["@cn-math-notation/playground@workspace:packages/playground"],
+
+    "@types/bun": ["@types/bun@1.4.5", "https://mirrors.huaweicloud.com/repository/npm/@types/bun/-/bun-1.4.5.tgz", { "dependencies": { "bun-types": "1.4.5" } }, "sha512-DpgwNI9z0L1S0gtb45QLCWgwCUcMLnsHYMJHQvpNj7erGiCGBvpggltAIeARrtobNMKMuy0UP7i56tKKgwFs/Q=="],
+
+    "@types/node": ["@types/node@26.6.10", "https://mirrors.huaweicloud.com/repository/npm/@types/node/-/node-26.6.10.tgz", { "dependencies": { "undici-types": "~8.9.0" } }, "sha512-WJuPHoGB8WNQuTksNF7SOQpnH02PXeDYz4iueWbBT6/hTWnShY5F3T/hoJA3fY9+uYReDZ7pyTKKx83jQa7aGg=="],
+
+    "bun-types": ["bun-types@1.4.5", "https://mirrors.huaweicloud.com/repository/npm/bun-types/-/bun-types-1.4.5.tgz", { "dependencies": { "@types/node": "*", "undici-types": "*" } }, "sha512-ECHn+9dhL3wv0G6u0+7dQvrnaimXiRDxxerYBmhTaLyJEEuvTPWk2Fye3XIf5Y++JIIiHKfQw4Z7V5D8KuiXbg=="],
+
+    "commander": ["commander@15.1.0", "https://mirrors.huaweicloud.com/repository/npm/commander/-/commander-15.1.0.tgz", {}, "sha512-cgnQ88TRrWcC7pVq46RzJVRMktu3W2RcbnoidnfBsl1bmDCBwJS/udcIZpKoCrbAYYaCqsz1yZCVIgbIaU3ddQ=="],
+
+    "katex": ["katex@0.19.1", "https://mirrors.huaweicloud.com/repository/npm/katex/-/katex-0.19.1.tgz", { "dependencies": { "commander": "^15.0.0" }, "bin": { "katex": "cli.js" } }, "sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA=="],
+
+    "typescript": ["typescript@6.0.3", "https://mirrors.huaweicloud.com/repository/npm/typescript/-/typescript-6.0.3.tgz", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
+
+    "undici-types": ["undici-types@8.13.1", "https://mirrors.huaweicloud.com/repository/npm/undici-types/-/undici-types-8.13.1.tgz", {}, "sha512-wEtfquPVc1e9umZh73XVwnPauVuGQp20M/u/4ENuWMRkZ8NZx0ut6q3HLLdMUb9awNlxxHcsaGVhaerZu/2SSw=="],
+
+    "@types/node/undici-types": ["undici-types@8.9.0", "https://mirrors.huaweicloud.com/repository/npm/undici-types/-/undici-types-8.9.0.tgz", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
+  }
+}

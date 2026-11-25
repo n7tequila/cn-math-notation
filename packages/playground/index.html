@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>竖式试写</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>竖式试写 <small>cn-math-notation</small></h1>
+      <nav class="controls" aria-label="例子与默认样式">
+        <label>
+          例子
+          <select id="example">
+            <option value="">选一个例子…</option>
+          </select>
+        </label>
+        <label>
+          进位位置
+          <select id="carryAt">
+            <option value="s">正下（课本）</option>
+            <option value="sw">左下</option>
+          </select>
+        </label>
+        <label>
+          运算符
+          <select id="operatorPlacement">
+            <option value="far">放最左</option>
+            <option value="adjacent">紧挨数字</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="guides" checked /> 数位虚线</label>
+        <label class="check"><input type="checkbox" id="padZero" checked /> 小数补 0</label>
+        <label class="check"><input type="checkbox" id="strikeZero" checked /> 划掉末尾 0</label>
+        <label class="check"><input type="checkbox" id="multiCarry" /> 多位乘法写进位</label>
+        <label class="check"><input type="checkbox" id="colorByDigit" /> 按乘数位着色</label>
+        <label>
+          计算过程
+          <select id="process">
+            <option value="auto">自动（写了答案就不画）</option>
+            <option value="show">总是画</option>
+            <option value="hide">不画</option>
+          </select>
+        </label>
+        <label>
+          一位数乘
+          <select id="mode">
+            <option value="compact">简写</option>
+            <option value="expanded">分步式</option>
+          </select>
+        </label>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <section class="pane editor-pane" aria-labelledby="editor-title">
+        <h2 id="editor-title">写法 <span class="hint">空一行分隔多个竖式；也可以写普通公式</span></h2>
+        <textarea id="source" spellcheck="false" autocomplete="off" aria-describedby="editor-title"></textarea>
+      </section>
+      <section class="pane preview-pane" aria-labelledby="preview-title" aria-live="polite">
+        <h2 id="preview-title">效果</h2>
+        <div id="preview" class="paper"></div>
+      </section>
+    </main>
+
+    <details class="cheatsheet">
+      <summary>写法速查</summary>
+      <table>
+        <tbody>
+          <tr><th><code>\shushi{403-167}</code></th><td>语义式：只写算式，程序算出竖式；可写孩子的答案 <code>403-167=346</code>、<code>71\div4=17……3</code>（写了答案默认不画过程）</td></tr>
+          <tr><th><code>\\</code></th><td>换行（分行只能用它，回车不算）</td></tr>
+          <tr><th><code>\hline</code></th><td>在两行之间画横线</td></tr>
+          <tr><th><code>+ - \times \div</code></th><td>写在一行开头的运算符</td></tr>
+          <tr><th><code>~</code></th><td>空格子：占一列不显示，让一行左移</td></tr>
+          <tr><th><code>\jin{1 1 ~}</code></th><td>进位行，数字记在进到的那一列</td></tr>
+          <tr><th><code>\tui{4}</code></th><td>退位点；<code>\tui{40}</code> 每位各一个点</td></tr>
+          <tr><th><code>\bu{0}</code></th><td>补的 0（红色虚线框）</td></tr>
+          <tr><th><code>\hong{1}</code> / <code>\err{3}</code> / <code>\hua{3}</code></th><td>红色强调 / 标为错误 / 划掉</td></tr>
+          <tr><th><code>\shang 1 7</code> / <code>\chu{4} 7 1</code></th><td>长除法的商行 / 被除数行</td></tr>
+          <tr><th><code>\textcolor{blue}{…}</code></th><td>着色</td></tr>
+          <tr><th><code>\shushi*[carryAt=sw]{…}</code></th><td>方括号里的选项优先于上方的默认样式</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

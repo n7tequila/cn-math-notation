@@ -1,0 +1,13 @@
+{
+  "name": "@cn-math-notation/playground",
+  "version": "0.0.0",
+  "private": true,
+  "description": "试写页：左边写 \\shushi*，右边实时看竖式",
+  "type": "module",
+  "scripts": { "dev": "bun --port=5177 index.html", "build": "bun build index.html --outdir=../../out/playground" },
+  "dependencies": {
+    "@cn-math-notation/core": "workspace:*",
+    "@cn-math-notation/katex": "workspace:*",
+    "katex": "0.19.1"
+  }
+}

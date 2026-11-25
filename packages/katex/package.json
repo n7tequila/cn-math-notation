@@ -1,0 +1,57 @@
+{
+  "name": "@cn-math-notation/katex",
+  "version": "0.1.0",
+  "description": "cn-math-notation 的 KaTeX 插件：注册 \\shushi 等命令，画出课本写法的竖式",
+  "license": "MIT",
+  "author": "n7tequila",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/n7tequila/cn-math-notation.git"
+  },
+  "homepage": "https://github.com/n7tequila/cn-math-notation#readme",
+  "bugs": {
+    "url": "https://github.com/n7tequila/cn-math-notation/issues"
+  },
+  "keywords": [
+    "katex",
+    "math",
+    "竖式",
+    "vertical arithmetic",
+    "long division",
+    "elementary math",
+    "chinese",
+    "svg"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "@cn-math-notation/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "katex": "~0.19.1"
+  },
+  "devDependencies": {
+    "katex": "0.19.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@cn-math-notation/core",
+  "version": "0.1.0",
+  "description": "中国中小学数学写法：竖式等课堂写法的模型、解析与 SVG 渲染（不依赖 KaTeX）",
+  "license": "MIT",
+  "author": "n7tequila",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/n7tequila/cn-math-notation.git"
+  },
+  "homepage": "https://github.com/n7tequila/cn-math-notation#readme",
+  "bugs": {
+    "url": "https://github.com/n7tequila/cn-math-notation/issues"
+  },
+  "keywords": [
+    "katex",
+    "math",
+    "竖式",
+    "vertical arithmetic",
+    "long division",
+    "elementary math",
+    "chinese",
+    "svg"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
