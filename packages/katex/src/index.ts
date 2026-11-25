@@ -12,8 +12,12 @@ import {
   ExpressionError,
   LayoutSyntaxError,
   OptionError,
-  renderShushi,
-  renderShushiLayout,
+  buildSemantic,
+  layoutToMathML,
+  parseLayout,
+  parseOptions,
+  renderLayout,
+  type Layout,
   type RenderedSvg,
   type StyleOptions,
 } from "@cn-math-notation/core";
@@ -36,6 +40,8 @@ interface ShushiNode {
   readonly type: "cmn-shushi";
   readonly mode: string;
   readonly rendered: RenderedSvg;
+  /** 不含 <math> 外壳的 MathML（mstack / mlongdiv），或 undefined 表示只给朗读文字。 */
+  readonly mathml: string | undefined;
 }
 
 const LAYOUT_FN = "\\cmn@shushilayout";
@@ -82,37 +88,64 @@ function htmlNode(rendered: RenderedSvg) {
 }
 
 /** MathML 侧先给朗读文字；导出 mstack 属后续工作（设计草案 §7）。 */
-function mathmlNode(rendered: RenderedSvg) {
+/**
+ * MathML 侧：默认给真正的 mstack / mlongdiv（可复制到其他支持 MathML 的工具）；
+ * register 时选 mathml: "label" 则只给一段朗读文字。
+ */
+function mathmlNode(rendered: RenderedSvg, mathml: string | undefined) {
   const label = rendered.label;
+  const markup = mathml ?? `<mtext>${escapeXml(label)}</mtext>`;
   return {
-    type: "mtext",
+    type: mathml === undefined ? "mtext" : "mrow",
     children: [],
     attributes: {},
     classes: [],
     toText: () => label,
-    toMarkup: () => `<mtext>${escapeXml(label)}</mtext>`,
+    toMarkup: () => markup,
     toNode: (): Node => {
-      const node = document.createElementNS("http://www.w3.org/1998/Math/MathML", "mtext");
-      node.textContent = label;
-      return node;
+      const doc = new DOMParser().parseFromString(`<math xmlns="${MATHML_NS}">${markup}</math>`, "application/xml");
+      return document.importNode(doc.documentElement.firstElementChild!, true);
     },
   };
 }
 
-/** 每个 KaTeX 实例的默认样式（未在 [ ] 里写的选项取这里）。 */
-const defaultsByInstance = new WeakMap<object, StyleOptions>();
+const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
+
+interface InstanceConfig {
+  readonly style: StyleOptions;
+  readonly mathml: "mstack" | "label";
+  readonly carries: "textbook" | "above";
+}
+
+/** 每个 KaTeX 实例的配置（默认样式：未在 [ ] 里写的选项取这里）。 */
+const configByInstance = new WeakMap<object, InstanceConfig>();
 
 export interface RegisterOptions {
   /** 覆盖沪教版默认样式，例如 { carryAt: "sw" }。 */
   readonly defaults?: Partial<StyleOptions>;
+  /** KaTeX 输出里隐藏的 MathML：mstack（默认，真正的竖式结构）或 label（只给朗读文字）。 */
+  readonly mathml?: "mstack" | "label";
+  /** 导出 MathML 时进位的方位，见 @cn-math-notation/core 的 MathMLOptions.carries。 */
+  readonly mathmlCarries?: "textbook" | "above";
+}
+
+function nodeFor(katex: KatexLike, mode: string, layout: Layout, style: StyleOptions): ShushiNode {
+  const config = configByInstance.get(katex)!;
+  const rendered = renderLayout(layout, style, { display: "block" });
+  const mathml = config.mathml === "label" ? undefined : layoutToMathML(layout, style, { wrap: false, carries: config.carries });
+  return { type: "cmn-shushi", mode, rendered, mathml };
 }
 
 /**
  * 在给定的 KaTeX 实例上注册命令。重复调用不会重复注册，只更新默认样式。
  */
 export function register(katex: KatexLike, options: RegisterOptions = {}): void {
-  const alreadyRegistered = defaultsByInstance.has(katex);
-  defaultsByInstance.set(katex, { ...DEFAULT_STYLE, ...options.defaults });
+  const alreadyRegistered = configByInstance.has(katex);
+  configByInstance.set(katex, {
+    style: { ...DEFAULT_STYLE, ...options.defaults },
+    mathml: options.mathml ?? "mstack",
+    carries: options.mathmlCarries ?? "textbook",
+  });
   if (alreadyRegistered) return;
 
   katex.__defineFunction({
@@ -125,13 +158,8 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
     allowedInText: true,
     handler: (context: { parser: { mode: string } }, args: RawArg[], optArgs: (RawArg | null)[]): ShushiNode => {
       try {
-        const rendered = renderShushiLayout(
-          normalizeRaw(args[0]!.string),
-          optArgs[0]?.string,
-          defaultsByInstance.get(katex) ?? DEFAULT_STYLE,
-          { display: "block" },
-        );
-        return { type: "cmn-shushi", mode: context.parser.mode, rendered };
+        const style = parseOptions(optArgs[0]?.string, configByInstance.get(katex)!.style);
+        return nodeFor(katex, context.parser.mode, parseLayout(normalizeRaw(args[0]!.string)), style);
       } catch (e) {
         if (e instanceof LayoutSyntaxError || e instanceof OptionError) {
           throw new katex.ParseError(`\\shushi*：${e.message}`);
@@ -140,7 +168,7 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
       }
     },
     htmlBuilder: (group: ShushiNode) => htmlNode(group.rendered),
-    mathmlBuilder: (group: ShushiNode) => mathmlNode(group.rendered),
+    mathmlBuilder: (group: ShushiNode) => mathmlNode(group.rendered, group.mathml),
   });
 
   katex.__defineFunction({
@@ -152,10 +180,8 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
     allowedInText: true,
     handler: (context: { parser: { mode: string } }, args: RawArg[], optArgs: (RawArg | null)[]): ShushiNode => {
       try {
-        const rendered = renderShushi(args[0]!.string, optArgs[0]?.string, defaultsByInstance.get(katex) ?? DEFAULT_STYLE, {
-          display: "block",
-        });
-        return { type: "cmn-shushi", mode: context.parser.mode, rendered };
+        const style = parseOptions(optArgs[0]?.string, configByInstance.get(katex)!.style);
+        return nodeFor(katex, context.parser.mode, buildSemantic(args[0]!.string, style), style);
       } catch (e) {
         if (e instanceof ExpressionError || e instanceof OptionError) {
           throw new katex.ParseError(`\\shushi：${e.message}`);

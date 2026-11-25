@@ -17,6 +17,7 @@
 - [命令一览](#命令一览)
 - [注意事项](#注意事项)
 - [常见报错](#常见报错)
+- [导出 MathML](#导出-mathml)
 - [接入方式](#接入方式)
 
 ## 递等式
@@ -334,6 +335,41 @@ register(katex, { defaults: { carryAt: "sw" } });
 | 小括号 / 中括号没有配对、多了一个右括号 | 括号写错了。 |
 
 在 KaTeX 里，这些报错和 KaTeX 自己的语法错误一样处理：`throwOnError: false` 时显示为红色错误文字，不会让页面崩掉。
+
+## 导出 MathML
+
+竖式可以导出成标准 MathML（MathML 3 §3.6 小学算术：`mstack`、`mlongdiv`、`mscarries`、`msline`），方便放进其他支持 MathML 的工具。
+
+```ts
+import { shushiToMathML, shushiLayoutToMathML } from "@cn-math-notation/core";
+
+shushiToMathML("403-167");                 // 语义式
+shushiLayoutToMathML(String.raw`7 4 \\ + 8 8 \\ \hline 1 6 2`);  // 直写布局
+shushiToMathML("74+88", "carryAt=sw", undefined, { carries: "above", wrap: false, display: "inline" });
+```
+
+| 竖式里的东西 | MathML |
+|---|---|
+| 加减乘竖式 | `<mstack stackalign="right">`，每行 `<msrow>`，运算符是行首的 `<mo>` |
+| 除法 | `<mlongdiv longdivstyle="lefttop">`（除数在左、商在上） |
+| 横线 | `<msline/>` |
+| 进位、退位点 | 该行前面的 `<mscarries>`，每格 `<mscarry location=…>`；退位点是 `location="n"` 的“·” |
+| 补的 0 / 划掉的 0 | `<menclose notation="box">` / `<menclose notation="updiagonalstrike">` |
+| 错误位、着色 | `mathbackground` / `mathcolor` |
+| 数位虚线 | 无对应写法，省略 |
+| 朗读文字 | `<math alttext="…">` |
+
+选项（第四个参数）：
+
+| 选项 | 取值 | 默认 | 说明 |
+|---|---|---|---|
+| `wrap` | `true` / `false` | `true` | 外面包不包 `<math>` |
+| `display` | `block` / `inline` | `block` | `<math display>` |
+| `carries` | `textbook` / `above` | `textbook` | 进位方位。`textbook` 按课本：坐在横线上的进位用 `location="s"`（左下写法用 `se`），写在下一行上方的用 `n` / `ne`；`above` 一律用 MathML 默认的 `n`（写在上方）。 |
+
+**兼容性**：主流浏览器不原生渲染 `mstack` / `mlongdiv`（它们不在 MathML Core 里）。用 W3C 官方 polyfill（elem-math）实测：`carries=above` 全部正确；`textbook` 结构符合规范，但 polyfill 对 `s`/`se` 方位的处理有误（横线被进位打断，个别行错位）。运行 `bun run mathml:preview` 可生成对照页 `out/mathml-preview.html`。
+
+在 KaTeX 里，竖式输出中隐藏的 MathML 默认就是上面的 `mstack` 结构（供复制、辅助技术使用）；`register(katex, { mathml: "label" })` 改为只放朗读文字，`register(katex, { mathmlCarries: "above" })` 让进位写在上方。试写页每个竖式下方有“复制 MathML”按钮。
 
 ## 接入方式
 

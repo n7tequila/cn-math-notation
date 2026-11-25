@@ -1,7 +1,16 @@
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import { register, type KatexLike } from "@cn-math-notation/katex";
-import type { CarryAt, MulMode, OperatorPlacement, ProcessMode } from "@cn-math-notation/core";
+import {
+  DEFAULT_STYLE,
+  shushiLayoutToMathML,
+  shushiToMathML,
+  type CarryAt,
+  type MulMode,
+  type OperatorPlacement,
+  type ProcessMode,
+  type StyleOptions,
+} from "@cn-math-notation/core";
 import { DENGSHI_EXAMPLES, EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
 
 const STORAGE_KEY = "cmn-playground-v1";
@@ -29,6 +38,50 @@ const mode = byId<HTMLSelectElement>("mode");
 const processMode = byId<HTMLSelectElement>("process");
 
 const instance = katex as unknown as KatexLike;
+
+function currentDefaults(): StyleOptions {
+  return {
+    ...DEFAULT_STYLE,
+    carryAt: carryAt.value as CarryAt,
+    operatorPlacement: operatorPlacement.value as OperatorPlacement,
+    guides: guides.checked,
+    padZero: padZero.checked,
+    strikeZero: strikeZero.checked,
+    multiCarry: multiCarry.checked,
+    colorByDigit: colorByDigit.checked,
+    mode: mode.value as MulMode,
+    process: processMode.value as ProcessMode,
+  };
+}
+
+/** 整块只有一个竖式命令时，返回它的 MathML（用于“复制 MathML”）；否则 undefined。 */
+function blockMathML(block: string): string | undefined {
+  const m = /^\\(?:shushi|vertical)(\*)?(?:\[([^\]]*)\])?\{([\s\S]*)\}$/.exec(block.trim());
+  if (m === null) return undefined;
+  const [, star, opts, body] = m;
+  return star === "*"
+    ? shushiLayoutToMathML(body!, opts, currentDefaults())
+    : shushiToMathML(body!, opts, currentDefaults());
+}
+
+function copyButton(mathml: string): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-mathml";
+  button.textContent = "复制 MathML";
+  button.addEventListener("click", () => {
+    navigator.clipboard.writeText(mathml).then(
+      () => {
+        button.textContent = "已复制";
+        setTimeout(() => (button.textContent = "复制 MathML"), 1500);
+      },
+      () => {
+        button.textContent = "复制失败";
+      },
+    );
+  });
+  return button;
+}
 
 function applyDefaults(): void {
   register(instance, {
@@ -58,6 +111,8 @@ function render(): void {
       figure.className = "block";
       try {
         katex.render(block, figure, { displayMode: true, throwOnError: true });
+        const mathml = blockMathML(block);
+        if (mathml !== undefined) figure.append(copyButton(mathml));
       } catch (e) {
         figure.classList.add("has-error");
         const msg = document.createElement("p");

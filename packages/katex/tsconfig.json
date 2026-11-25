@@ -1,1 +1,17 @@
-{ "extends": "../../tsconfig.base.json", "include": ["src", "test"] }
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@cn-math-notation/core": [
+        "../core/src/index.ts"
+      ],
+      "@cn-math-notation/katex": [
+        "../katex/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "test"
+  ]
+}

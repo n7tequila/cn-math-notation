@@ -24,7 +24,7 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     const html = katex.renderToString(EX1, { displayMode: true });
     expect(html).toContain('class="cmn-shushi"');
     expect(html).toContain("cmn-jin");
-    expect(html).toContain("<mtext>竖式：74，加 88，162</mtext>");
+    expect(html).toContain("<mstack stackalign=\"right\">");
   });
 
   test("raw 参数里的真实换行与 \\\\ 分行并存，结果与单行写法相同", () => {
@@ -84,7 +84,7 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
   test("语义式 \\shushi{…} 由程序算出竖式", () => {
     const html = katex.renderToString(String.raw`\shushi{74+88}`);
     expect(html).toContain("cmn-jin");
-    expect(html).toContain("<mtext>竖式：74，加 88，162</mtext>");
+    expect(html).toContain("<mstack stackalign=\"right\">");
   });
 
   test("语义式的选项与错误", () => {
@@ -128,6 +128,21 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
 
   test("递等式里可以写分数等普通公式（直写）", () => {
     expect(katex.renderToString(String.raw`\dengshi*{\frac{1}{2}+\frac{1}{2} \\ 1}`)).toContain("mfrac");
+  });
+
+  test("隐藏的 MathML 是真正的竖式结构：mstack / mscarries / mlongdiv", () => {
+    const add = katex.renderToString(String.raw`\shushi{74+88}`);
+    expect(add).toContain('<mscarry location="s" crossout="none">');
+    expect(add).toContain("<msline/>");
+    expect(katex.renderToString(String.raw`\shushi{71\div4}`)).toContain('<mlongdiv longdivstyle="lefttop"');
+  });
+
+  test("register 选项：mathml=label 只给朗读文字；mathmlCarries=above 进位写上方", () => {
+    register(katex as unknown as KatexLike, { mathml: "label" });
+    expect(katex.renderToString(String.raw`\shushi{74+88}`)).toContain("<mtext>竖式：74，加 88，162</mtext>");
+    register(katex as unknown as KatexLike, { mathmlCarries: "above" });
+    expect(katex.renderToString(String.raw`\shushi{74+88}`)).toContain('<mscarry location="n" crossout="none">');
+    register(katex as unknown as KatexLike);
   });
 
   test("重复注册无副作用", () => {

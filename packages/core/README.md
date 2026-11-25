@@ -21,6 +21,8 @@ const layout = renderShushiLayout(String.raw`\tui{4} 0 3 \\ - 1 6 7 \\ \hline \e
 - `svg`：SVG 字符串，颜色跟随外层文字（`currentColor`），尺寸以 em 计。
 - `label`：给屏幕阅读器的文字描述。
 
+竖式导出 MathML（`mstack` / `mlongdiv`）：`shushiToMathML("403-167")`、`shushiLayoutToMathML(…)`。
+
 递等式（脱式计算）返回 TeX，交给 KaTeX、MathJax 等任何 TeX 渲染器：
 
 ```ts

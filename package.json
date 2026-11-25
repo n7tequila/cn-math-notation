@@ -13,7 +13,8 @@
     "playground": "bun run build && cd packages/playground && bun --port=5177 index.html",
     "build:playground": "bun run build && cd packages/playground && bun build index.html --outdir=../../out/playground",
     "docs:images": "bun run scripts/build-doc-images.ts",
-    "build": "cd packages/core && bun run build && cd ../katex && bun run build"
+    "build": "cd packages/core && bun run build && cd ../katex && bun run build",
+    "mathml:preview": "bun run scripts/mathml-preview.ts"
   },
   "devDependencies": {
     "typescript": "~6.0.0",

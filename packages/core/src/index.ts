@@ -36,6 +36,9 @@ import { parseLayout } from "./parse-layout.ts";
 import { buildSemantic } from "./semantic/index.ts";
 import { DEFAULT_STYLE, parseOptions, type StyleOptions } from "./options.ts";
 import { renderLayout, type RenderedSvg, type RenderOptions } from "./render-svg.ts";
+import { layoutToMathML, type MathMLOptions } from "./mathml.ts";
+
+export { layoutToMathML, type MathMLOptions } from "./mathml.ts";
 
 /** 直写布局一步到位：原文 + 选项原文 → SVG。base 是未写选项时的默认样式。 */
 export function renderShushiLayout(
@@ -56,4 +59,26 @@ export function renderShushi(
 ): RenderedSvg {
   const style = parseOptions(options, base);
   return renderLayout(buildSemantic(expression, style), style, render);
+}
+
+/** 语义式 → MathML（mstack / mlongdiv）。 */
+export function shushiToMathML(
+  expression: string,
+  options?: string,
+  base: StyleOptions = DEFAULT_STYLE,
+  mathml: MathMLOptions = {},
+): string {
+  const style = parseOptions(options, base);
+  return layoutToMathML(buildSemantic(expression, style), style, mathml);
+}
+
+/** 直写布局 → MathML。 */
+export function shushiLayoutToMathML(
+  source: string,
+  options?: string,
+  base: StyleOptions = DEFAULT_STYLE,
+  mathml: MathMLOptions = {},
+): string {
+  const style = parseOptions(options, base);
+  return layoutToMathML(parseLayout(source), style, mathml);
 }
