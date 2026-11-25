@@ -38,8 +38,8 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "prepublishOnly": "bun run build"
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "rm -rf dist && tsc -p tsconfig.build.json"
   },
   "publishConfig": {
     "access": "public",
