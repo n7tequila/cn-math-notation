@@ -113,6 +113,13 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect((html.match(/<mtr>/g) || []).length).toBe(3);
   });
 
+  test("递等式 [steps=1]：只写前几步，后面留空等号行；选项写错报错", () => {
+    const html = katex.renderToString(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
+    expect(html).toContain("underline");
+    expect(katex.renderToString(String.raw`\dengshi*[steps=1, rest=cut]{1+2+3 \\ 3+3 \\ 6}`)).not.toContain("underline");
+    expect(() => katex.renderToString(String.raw`\dengshi[steps=x]{1+2}`)).toThrow(/steps/);
+  });
+
   test("递等式 \\dengshi*{…}：直写，与语义式结果相同", () => {
     const sem = katex.renderToString(String.raw`\dengshi{1+2+3}`);
     const layout = katex.renderToString(String.raw`\dengshi*{1+2+3 \\ 3+3 \\ 6}`);

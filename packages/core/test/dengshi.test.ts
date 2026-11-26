@@ -76,3 +76,42 @@ describe("排版：等号悬在算式左边", () => {
     expect(a).toContain(String.raw`={}&25\times44`);
   });
 });
+
+describe("只写前几步 steps（维护者 2026-11-26）", () => {
+  const BLANK = String.raw`\underline{\hspace{6em}}`;
+  const rows = (tex: string) =>
+    tex.replace(/^\\begin\{aligned\}|\\end\{aligned\}$/g, "").split(/\\\\\[6pt\]/);
+
+  test("steps=1：题目加一步，后面每步留一个空等号行", () => {
+    expect(rows(buildDengshi("2×3×4+1", "steps=1"))).toEqual([
+      "&2\\times 3\\times 4+1",
+      "={}&6\\times 4+1",
+      `={}&${BLANK}`,
+      `={}&${BLANK}`,
+    ]);
+  });
+
+  test("rest=cut：直接截断", () => {
+    expect(rows(buildDengshi("2×3×4+1", "steps=1, rest=cut"))).toEqual(["&2\\times 3\\times 4+1", "={}&6\\times 4+1"]);
+  });
+
+  test("steps=0 只写题目；steps 不少于总步数时照常写完", () => {
+    expect(rows(buildDengshi("1+2+3", "steps=0"))).toEqual(["&1+2+3", `={}&${BLANK}`, `={}&${BLANK}`]);
+    expect(buildDengshi("1+2+3", "steps=5")).toBe(buildDengshi("1+2+3"));
+  });
+
+  test("直写也能用", () => {
+    expect(rows(buildDengshiLayout(String.raw`1+2+3 \\ 3+3 \\ 6`, "steps=1"))).toEqual([
+      "&1+2+3",
+      "={}&3+3",
+      `={}&${BLANK}`,
+    ]);
+  });
+
+  test("非法选项报错", () => {
+    expect(() => buildDengshi("1+2", "steps=-1")).toThrow(/steps/);
+    expect(() => buildDengshi("1+2", "steps=a")).toThrow(/steps/);
+    expect(() => buildDengshi("1+2", "rest=x")).toThrow(/rest/);
+    expect(() => buildDengshi("1+2", "foo")).toThrow(/未知选项/);
+  });
+});

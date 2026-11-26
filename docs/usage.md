@@ -45,7 +45,22 @@
 - 只做整数：减法不能得负数，除法要能整除；小数属第二期。
 - 语义式只按运算顺序算，不做简便计算（如 `25×(40+4)` 算成 `25×44`）。需要简便计算或特殊步骤时用直写 `\dengshi*`，行首写不写等号都可以，行里可以写分数等任何 KaTeX 公式。
 - 英文别名：`\stepeq`、`\stepeq*`。
-- 不用 KaTeX 时，`@cn-math-notation/core` 的 `buildDengshi("25×(40+4)")` 返回 TeX 字符串，可交给 MathJax 等任何 TeX 渲染器。
+- 不用 KaTeX 时，`@cn-math-notation/core` 的 `buildDengshi("25×(40+4)")` 返回 TeX 字符串，可交给 MathJax 等任何 TeX 渲染器；选项作第二个参数传入，如 `buildDengshi("2×3×4+1", "steps=1")`。
+
+### 只写前几步
+
+方括号里写 `steps=N`，只写出前 N 步（不算题目那行），适合出练习、让孩子接着写。没写出来的步骤默认每步留一个空等号行（`rest=blank`），行数和完整递等式一样；`rest=cut` 时直接截断。语义式、直写都能用。
+
+```latex
+\dengshi[steps=1]{2\times3\times4+1}            % 2×3×4+1 / =6×4+1 / =____ / =____
+\dengshi[steps=1, rest=cut]{2\times3\times4+1}  % 2×3×4+1 / =6×4+1
+\dengshi[steps=0]{25\times(40+4)}               % 只写题目，后面两行留空
+```
+
+| 选项 | 取值 | 默认 | 作用 |
+|---|---|---|---|
+| `steps` | 不小于 0 的整数 | 全部写出 | 写出几步（不算题目那行）；不少于总步数时照常写完 |
+| `rest` | `blank` / `cut` | `blank` | 没写出来的步骤：留空等号行 / 直接截断 |
 
 ## 语义式（竖式）
 
@@ -310,8 +325,8 @@ register(katex, { defaults: { carryAt: "sw" } });
 |---|---|---|
 | `\shushi*[选项]{…}` | `\vertical*` | 竖式（直写布局） |
 | `\shushi[选项]{算式}` | `\vertical` | 竖式（语义式，程序算出过程） |
-| `\dengshi{算式}` | `\stepeq` | 递等式（语义式，按运算顺序逐步化简） |
-| `\dengshi*{… \\ …}` | `\stepeq*` | 递等式（直写，每行一步） |
+| `\dengshi[选项]{算式}` | `\stepeq` | 递等式（语义式，按运算顺序逐步化简；选项见“只写前几步”） |
+| `\dengshi*[选项]{… \\ …}` | `\stepeq*` | 递等式（直写，每行一步） |
 | `\jin{…}` | `\carry{…}` | 进位行 |
 | `\tui{…}` | `\borrow{…}` | 退位点 |
 | `\bu{…}` | `\pad{…}` | 补 0 |

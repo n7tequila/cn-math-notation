@@ -9,6 +9,10 @@ export {
   simplifySteps,
   arithToTex,
   type ArithNode,
+  parseDengshiOptions,
+  DEFAULT_DENGSHI,
+  type DengshiOptions,
+  type DengshiRest,
 } from "./dengshi/index.ts";
 export { buildSemantic, parseExpression, ExpressionError, DIGIT_COLORS, type Expression } from "./semantic/index.ts";
 export { parseLayout, tokenize, assignColumns, LayoutSyntaxError } from "./parse-layout.ts";

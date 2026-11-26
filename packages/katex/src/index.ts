@@ -202,19 +202,20 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
  * 所以行内的分数、括号等都按 KaTeX 的排版来。
  */
 function registerDengshi(katex: KatexLike): void {
-  const define = (fnName: string, build: (raw: string) => string, label: string) =>
+  const define = (fnName: string, build: (raw: string, options?: string) => string, label: string) =>
     katex.__defineFunction({
       type: "ordgroup",
       names: [fnName],
       numArgs: 1,
-      argTypes: ["raw"],
+      numOptionalArgs: 1,
+      argTypes: ["raw", "raw"],
       allowedInText: true,
-      handler: (context: { parser: { mode: string } }, args: RawArg[]) => {
+      handler: (context: { parser: { mode: string } }, args: RawArg[], optArgs: (RawArg | null)[]) => {
         let tex: string;
         try {
-          tex = build(normalizeRaw(args[0]!.string));
+          tex = build(normalizeRaw(args[0]!.string), optArgs[0]?.string);
         } catch (e) {
-          if (e instanceof ExpressionError) throw new katex.ParseError(`${label}：${e.message}`);
+          if (e instanceof ExpressionError || e instanceof OptionError) throw new katex.ParseError(`${label}：${e.message}`);
           throw e;
         }
         return { type: "ordgroup", mode: context.parser.mode, body: katex.__parse(tex, { throwOnError: true }) };

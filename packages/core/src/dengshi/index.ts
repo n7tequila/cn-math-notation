@@ -5,16 +5,29 @@
  */
 import { ExpressionError } from "../semantic/numbers.ts";
 import { parseArith, simplifySteps, toTex } from "./expr.ts";
+import { parseDengshiOptions, type DengshiOptions } from "./options.ts";
 
+export { parseDengshiOptions, DEFAULT_DENGSHI, type DengshiOptions, type DengshiRest } from "./options.ts";
 export { parseArith, simplifySteps, toTex as arithToTex, type Node as ArithNode } from "./expr.ts";
 
 /** 行距，与课本里每步一行的疏朗程度接近。 */
 const ROW_GAP = "6pt";
 
+/** 没写出来的一步：留给孩子接着写的空白横线【推论：宽度取 6em】。 */
+const BLANK_STEP = "\\underline{\\hspace{6em}}";
+
+/** 按 steps 只留前几步；rest=blank 时其余每步换成空白横线。 */
+function limitSteps(lines: readonly string[], opts: DengshiOptions): string[] {
+  if (opts.steps === undefined || opts.steps >= lines.length - 1) return [...lines];
+  const shown = lines.slice(0, opts.steps + 1);
+  if (opts.rest === "cut") return shown;
+  return [...shown, ...Array.from({ length: lines.length - 1 - opts.steps }, () => BLANK_STEP)];
+}
+
 /** 把若干行算式（不含等号）排成递等式的 TeX。 */
-export function dengshiTex(lines: readonly string[]): string {
+export function dengshiTex(lines: readonly string[], opts?: DengshiOptions): string {
   if (lines.length === 0) throw new ExpressionError("递等式至少要有一行");
-  const rows = lines.map((line, i) => (i === 0 ? `&${line}` : `={}&${line}`));
+  const rows = (opts === undefined ? lines : limitSteps(lines, opts)).map((line, i) => (i === 0 ? `&${line}` : `={}&${line}`));
   return `\\begin{aligned}${rows.join(`\\\\[${ROW_GAP}]`)}\\end{aligned}`;
 }
 
@@ -23,9 +36,9 @@ export function dengshiSteps(expression: string): string[] {
   return simplifySteps(parseArith(expression)).map(toTex);
 }
 
-/** 语义式一步到位：算式 → 递等式 TeX。 */
-export function buildDengshi(expression: string): string {
-  return dengshiTex(dengshiSteps(expression));
+/** 语义式一步到位：算式 + 选项原文（如 `steps=2`）→ 递等式 TeX。 */
+export function buildDengshi(expression: string, options?: string): string {
+  return dengshiTex(dengshiSteps(expression), parseDengshiOptions(options));
 }
 
 /**
@@ -41,6 +54,6 @@ export function parseDengshiLines(source: string): string[] {
   return lines;
 }
 
-export function buildDengshiLayout(source: string): string {
-  return dengshiTex(parseDengshiLines(source));
+export function buildDengshiLayout(source: string, options?: string): string {
+  return dengshiTex(parseDengshiLines(source), parseDengshiOptions(options));
 }

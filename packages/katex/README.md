@@ -25,6 +25,7 @@ katex.render(String.raw`\shushi{403-167}`, element, { displayMode: true });
 | `\shushi[carryAt=sw, multiCarry]{538\times26}` | 方括号里写样式选项 |
 | `\dengshi{[100-(20+30)]\div5}` | 递等式：按运算顺序逐步化简，等号悬在左边 |
 | `\dengshi*{25\times(40+4) \\ 25\times44 \\ 1100}` | 递等式直写：每行一步 |
+| `\dengshi[steps=1]{2\times3\times4+1}` | 只写前 1 步，其余留空等号行（`rest=cut` 直接截断） |
 
 英文别名：`\vertical`、`\vertical*`、`\stepeq`、`\stepeq*`。统一修改默认样式：`register(katex, { defaults: { carryAt: "sw" } })`。
 
