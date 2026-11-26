@@ -577,6 +577,16 @@ const { svg, label, widthEm, heightEm } = renderShushiLayout(String.raw`7 4 \\ +
 - `label`：朗读用的文字描述。
 - 嵌进别的排版盒子时，传 `{ display: "block" }` 作为第四个参数，避免基线错位撑出空白。
 
-### Typora、Obsidian、GitHub
+### Typora
 
-这些工具自带公式引擎，无法注册新命令，`\shushi*` 会显示为错误。Typora 插件在计划中；在此之前可以用图片（例如本仓库 `docs/images/` 里的图）。
+安装 [Typora 插件](../packages/typora/README.md)后，本库命令**单独写成一个公式**即可：
+
+```latex
+$$\shushi{403-167}$$
+```
+
+行内公式 `$\shushi{74+88}$` 也可以。和普通公式写在同一个公式里（如 `74+88=162 \quad \shushi{…}`）暂不支持，会提示“本库命令要单独写成一个公式”。
+
+### Obsidian、GitHub
+
+这些工具自带公式引擎，无法注册新命令，`\shushi*` 会显示为错误。可以先用图片（例如本仓库 `docs/images/` 里的图）。

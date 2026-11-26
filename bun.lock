@@ -11,11 +11,11 @@
     },
     "packages/core": {
       "name": "@cn-math-notation/core",
-      "version": "0.0.0",
+      "version": "0.7.0",
     },
     "packages/katex": {
       "name": "@cn-math-notation/katex",
-      "version": "0.0.0",
+      "version": "0.7.0",
       "dependencies": {
         "@cn-math-notation/core": "workspace:*",
       },
@@ -35,6 +35,13 @@
         "katex": "0.19.1",
       },
     },
+    "packages/typora": {
+      "name": "@cn-math-notation/typora",
+      "version": "0.1.0",
+      "dependencies": {
+        "@cn-math-notation/core": "workspace:*",
+      },
+    },
   },
   "packages": {
     "@cn-math-notation/core": ["@cn-math-notation/core@workspace:packages/core"],
@@ -42,6 +49,8 @@
     "@cn-math-notation/katex": ["@cn-math-notation/katex@workspace:packages/katex"],
 
     "@cn-math-notation/playground": ["@cn-math-notation/playground@workspace:packages/playground"],
+
+    "@cn-math-notation/typora": ["@cn-math-notation/typora@workspace:packages/typora"],
 
     "@types/bun": ["@types/bun@1.4.5", "https://mirrors.huaweicloud.com/repository/npm/@types/bun/-/bun-1.4.5.tgz", { "dependencies": { "bun-types": "1.4.5" } }, "sha512-DpgwNI9z0L1S0gtb45QLCWgwCUcMLnsHYMJHQvpNj7erGiCGBvpggltAIeARrtobNMKMuy0UP7i56tKKgwFs/Q=="],
 

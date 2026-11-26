@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@cn-math-notation/core": [
+        "../core/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "test",
+    "scripts"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "n7tequila.typora-plugin-cn-math-notation",
+  "name": "cn-math-notation",
+  "description": "在公式里画中国中小学数学写法：竖式、递等式、短除法、树状图、十字相乘、综合除法。",
+  "author": "n7tequila",
+  "authorUrl": "https://github.com/n7tequila",
+  "repo": "https://github.com/n7tequila/cn-math-notation",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "minCoreVersion": "2.9.0",
+  "platforms": ["win32", "linux", "darwin"]
+}

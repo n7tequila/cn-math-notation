@@ -162,7 +162,7 @@ const layout = renderShushiLayout(String.raw`7 4 \\ + 8 8 \\ \hline 1 6 2`); // 
 |---|---|---|
 | 自己的网页、应用（能控制 KaTeX 加载代码） | ✅ | 调用 `register(katex)` 即可 |
 | 服务端渲染（`katex.renderToString`） | ✅ | 输出的 HTML 自带 SVG |
-| Typora | ⏳ 计划中 | Typora 内置的是 MathJax，需要专门的 Typora 插件 |
+| Typora | ✅ | 安装 [Typora 插件](packages/typora/README.md)（基于 typora-community-plugin） |
 | Obsidian、GitHub 等自带公式引擎的工具 | ❌ | 无法注册新命令；可以先用图片 |
 
 ## 路线图
@@ -172,13 +172,14 @@ const layout = renderShushiLayout(String.raw`7 4 \\ + 8 8 \\ \hline 1 6 2`); // 
 | 一 ✅ | 竖式直写布局 ✅、竖式语义式（整数与小数加减、整数乘除）✅、递等式（语义式与直写）✅、MathML 导出 ✅、KaTeX 插件 ✅、试写页 ✅ |
 | 二 ✅ | 小数乘除 ✅、短除法 ✅、分解质因数树状图 ✅ |
 | 三 ✅ | 十字相乘 ✅、多项式竖式 ✅、综合除法 ✅ |
-| 之后 | Typora 插件 |
+| 接入 | Typora 插件 ✅ |
 
 ## 仓库结构
 
 ```
 packages/core        模型、解析、SVG 渲染（不依赖 KaTeX）
 packages/katex       KaTeX 插件（锁定 KaTeX ~0.19.1）
+packages/typora      Typora 插件（不发 npm，打成 plugin.zip）
 packages/playground  试写页
 docs/usage.md        使用说明
 docs/design/         设计草案与写法裁决记录
