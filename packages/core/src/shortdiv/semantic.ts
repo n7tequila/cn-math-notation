@@ -4,6 +4,7 @@
  * - 两个数：用公有的质因数从小到大去除，除到两个商互质。
  * - 三个数（求最小公倍数）：能整除其中至少两个数的最小质数去除，除不尽的原样落下，除到两两互质。
  */
+import { isPrime, smallestPrimeFactor } from "../number-theory.ts";
 import { ExpressionError } from "../semantic/numbers.ts";
 import { term, type ShortDivLayout, type ShortDivRow } from "./model.ts";
 import type { ShortDivOptions } from "./options.ts";
@@ -29,17 +30,6 @@ function parseNumbers(source: string): number[] {
 
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
-}
-
-function isPrime(n: number): boolean {
-  if (n < 2) return false;
-  for (let p = 2; p * p <= n; p += 1) if (n % p === 0) return false;
-  return true;
-}
-
-function smallestPrimeFactor(n: number): number {
-  for (let p = 2; p * p <= n; p += 1) if (n % p === 0) return p;
-  return n;
 }
 
 /** 本步用的除数；undefined 表示该停了。 */

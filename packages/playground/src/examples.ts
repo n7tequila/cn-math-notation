@@ -106,6 +106,14 @@ export const DUANCHU_EXAMPLES: readonly DengshiExample[] = [
   { id: "dc-layout", name: "短除法直写（标出写错的数）", tex: String.raw`\duanchu*{2 | 36 48 \\ 2 | \err{17} 24 \\ 3 4}` },
 ];
 
+/** 树状图例子：整段 TeX。 */
+export const SHUZHUANG_EXAMPLES: readonly DengshiExample[] = [
+  { id: "tree-prime", name: "树状图 36（每步拆出最小质数）", tex: String.raw`\shuzhuang{36}` },
+  { id: "tree-half", name: "树状图 36（对半拆，写结果）", tex: String.raw`\shuzhuang[split=half, result]{36}` },
+  { id: "tree-layout", name: "树状图直写 36 = 4×9", tex: String.raw`\shuzhuang*{36 = 4 \times 9 \\ 4 = 2 \times 2 \\ 9 = 3 \times 3}` },
+  { id: "tree-err", name: "树状图直写（标出写错的数）", tex: String.raw`\shuzhuang*{36 = 4 \times \err{8}}` },
+];
+
 /** 递等式例子：整段 TeX。语义式只写算式；直写用 \\ 分行。 */
 export interface DengshiExample {
   readonly id: string;

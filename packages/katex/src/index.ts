@@ -1,6 +1,6 @@
 /**
  * KaTeX 插件：注册 \shushi / \shushi*（竖式，英文别名 \vertical）、\dengshi / \dengshi*（递等式，英文别名 \stepeq）
- * 与 \duanchu / \duanchu*（短除法，英文别名 \shortdiv）。
+ * 、\duanchu / \duanchu*（短除法，英文别名 \shortdiv）与 \shuzhuang / \shuzhuang*（树状图，英文别名 \factortree）。
  *
  * 依赖 KaTeX 的不稳定接口 __defineFunction / __defineMacro（双下划线前缀），
  * 已在 KaTeX 0.19.1 上验证；peerDependencies 锁在 ~0.19.1。
@@ -20,6 +20,8 @@ import {
   renderLayout,
   renderDuanchu,
   renderDuanchuLayout,
+  renderShuzhuang,
+  renderShuzhuangLayout,
   type Layout,
   type RenderedSvg,
   type StyleOptions,
@@ -53,9 +55,8 @@ const COMMAND_NAMES = ["\\shushi", "\\vertical"] as const;
 const DENGSHI_LAYOUT_FN = "\\cmn@dengshilayout";
 const DENGSHI_SEMANTIC_FN = "\\cmn@dengshisemantic";
 const DENGSHI_NAMES = ["\\dengshi", "\\stepeq"] as const;
-const DUANCHU_LAYOUT_FN = "\\cmn@duanchulayout";
-const DUANCHU_SEMANTIC_FN = "\\cmn@duanchusemantic";
 const DUANCHU_NAMES = ["\\duanchu", "\\shortdiv"] as const;
+const SHUZHUANG_NAMES = ["\\shuzhuang", "\\factortree"] as const;
 
 /**
  * KaTeX 在 raw 参数里仍会展开宏（原型实测 0.19.1）：`~` 会变成 `\nobreakspace`，
@@ -201,11 +202,23 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
     katex.__defineMacro(name, `\\@ifstar${LAYOUT_FN}${SEMANTIC_FN}`);
   }
   registerDengshi(katex);
-  registerDuanchu(katex);
+  registerSvgCommand(katex, "duanchu", DUANCHU_NAMES, renderDuanchu, renderDuanchuLayout);
+  registerSvgCommand(katex, "shuzhuang", SHUZHUANG_NAMES, renderShuzhuang, renderShuzhuangLayout);
 }
 
-/** 短除法：本库画成 SVG；MathML 表达不了短除法（设计草案 §6），隐藏的 MathML 只给朗读文字。 */
-function registerDuanchu(katex: KatexLike): void {
+type SvgRenderer = (raw: string, options: string | undefined, render: { display: "block" }) => RenderedSvg;
+
+/**
+ * 短除法、树状图：本库画成 SVG；MathML 表达不了这两种写法（设计草案 §6），隐藏的 MathML 只给朗读文字。
+ * 注册 \<name>[选项]{…}（语义式）与 \<name>*[选项]{…}（直写）以及英文别名。
+ */
+function registerSvgCommand(
+  katex: KatexLike,
+  name: string,
+  names: readonly string[],
+  semantic: SvgRenderer,
+  layout: SvgRenderer,
+): void {
   const define = (fnName: string, render: (raw: string, options?: string) => RenderedSvg, label: string) =>
     katex.__defineFunction({
       type: "cmn-shushi",
@@ -226,10 +239,12 @@ function registerDuanchu(katex: KatexLike): void {
         }
       },
     });
-  define(DUANCHU_LAYOUT_FN, (raw, options) => renderDuanchuLayout(raw, options, { display: "block" }), "\\duanchu*");
-  define(DUANCHU_SEMANTIC_FN, (raw, options) => renderDuanchu(raw, options, { display: "block" }), "\\duanchu");
-  for (const name of DUANCHU_NAMES) {
-    katex.__defineMacro(name, `\\@ifstar${DUANCHU_LAYOUT_FN}${DUANCHU_SEMANTIC_FN}`);
+  const layoutFn = `\\cmn@${name}layout`;
+  const semanticFn = `\\cmn@${name}semantic`;
+  define(layoutFn, (raw, options) => layout(raw, options, { display: "block" }), `\\${name}*`);
+  define(semanticFn, (raw, options) => semantic(raw, options, { display: "block" }), `\\${name}`);
+  for (const alias of names) {
+    katex.__defineMacro(alias, `\\@ifstar${layoutFn}${semanticFn}`);
   }
 }
 

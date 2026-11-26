@@ -58,6 +58,21 @@ export {
   type ShortDivTerm,
   type ShortDivOptions,
 } from "./shortdiv/index.ts";
+export {
+  buildFactorTree,
+  buildFactorTreeLayout,
+  parseFactorTreeLayout,
+  parseFactorTreeOptions,
+  renderFactorTree,
+  renderShuzhuang,
+  renderShuzhuangLayout,
+  describeFactorTree,
+  DEFAULT_FACTORTREE,
+  type FactorTree,
+  type FactorTreeNode,
+  type FactorTreeOptions,
+  type FactorSplit,
+} from "./factortree/index.ts";
 
 /** 直写布局一步到位：原文 + 选项原文 → SVG。base 是未写选项时的默认样式。 */
 export function renderShushiLayout(

@@ -1,6 +1,6 @@
 # cn-math-notation
 
-**中国中小学数学写法库**：把课本上的竖式、短除法、递等式（以及将来的树状图、十字相乘）用几行文字写出来，渲染成和课本一样的图。作为 [KaTeX](https://katex.org) 的扩展使用：普通公式照常交给 KaTeX，本库只画 KaTeX 画不了的课堂写法。
+**中国中小学数学写法库**：把课本上的竖式、短除法、树状图、递等式（以及将来的十字相乘）用几行文字写出来，渲染成和课本一样的图。作为 [KaTeX](https://katex.org) 的扩展使用：普通公式照常交给 KaTeX，本库只画 KaTeX 画不了的课堂写法。
 
 <p align="center">
   <img src="docs/images/add-carry.svg" alt="74+88 加法竖式，带进位" height="170" />
@@ -12,7 +12,7 @@
   <img src="docs/images/div-remainder.svg" alt="71÷4 除法竖式，有余数" height="260" />
 </p>
 
-> **状态：早期版本。** 竖式支持整数与小数的加减乘除；递等式支持整数四则运算与括号；短除法支持分解质因数和两三个数的公因数、公倍数。两种写法：**语义式**只写算式、程序算出竖式；**直写布局**逐行写出，用来画孩子的错误过程或特殊写法。
+> **状态：早期版本。** 竖式支持整数与小数的加减乘除；递等式支持整数四则运算与括号；短除法支持分解质因数和两三个数的公因数、公倍数；树状图支持分解质因数。两种写法：**语义式**只写算式、程序算出竖式；**直写布局**逐行写出，用来画孩子的错误过程或特殊写法。
 
 ## 为什么要做
 
@@ -82,6 +82,18 @@ $$\duanchu[result]{36, 48}$$   $$\duanchu{36}$$   $$\duanchu*{2 | 36 48 \\ 2 | 1
   <img src="docs/images/dc-factor.svg" alt="短除法分解 36" height="150" />
 </p>
 
+## 树状图
+
+```latex
+$$\shuzhuang{36}$$   $$\shuzhuang[split=half, result]{36}$$   $$\shuzhuang*{36 = 4 \times 9 \\ 4 = 2 \times 2 \\ 9 = 3 \times 3}$$
+```
+
+<p>
+  <img src="docs/images/tree-prime.svg" alt="36 的树状图" height="200" />
+  &nbsp;&nbsp;
+  <img src="docs/images/tree-layout.svg" alt="36 = 4×9 的树状图" height="150" />
+</p>
+
 ## 更多直写布局例子
 
 | 写法 | 效果 |
@@ -146,7 +158,7 @@ const layout = renderShushiLayout(String.raw`7 4 \\ + 8 8 \\ \hline 1 6 2`); // 
 | 期 | 内容 |
 |---|---|
 | 一 ✅ | 竖式直写布局 ✅、竖式语义式（整数与小数加减、整数乘除）✅、递等式（语义式与直写）✅、MathML 导出 ✅、KaTeX 插件 ✅、试写页 ✅ |
-| 二（进行中） | 小数乘除 ✅、短除法 ✅、分解质因数树状图 |
+| 二 ✅ | 小数乘除 ✅、短除法 ✅、分解质因数树状图 ✅ |
 | 三 | 十字相乘、多项式竖式、综合除法 |
 | 之后 | Typora 插件 |
 

@@ -92,6 +92,34 @@
 - 想先除以 6 这类合数，或画孩子自己的写法，用直写 `\duanchu*`：行用 `\\` 分开，`|` 左边是除数，右边是这一行的数，最后一行只写商；`\err{…}`、`\hong{…}` 包住整个数。直写不支持 `result`。
 - 英文别名：`\shortdiv`、`\shortdiv*`。MathML 表达不了短除法，导出时只给朗读文字。
 
+## 树状图（分解质因数）
+
+```latex
+\shuzhuang{36}                       % 每步拆出最小的质数（与短除法步骤对应）
+\shuzhuang[split=half, result]{36}   % 尽量对半拆；result 在下面写 36 = 2×2×3×3
+\shuzhuang*{36 = 4 \times 9 \\ 4 = 2 \times 2 \\ 9 = 3 \times 3}   % 直写：孩子自己的拆法
+```
+
+<p>
+  <img src="images/tree-prime.svg" alt="36 的树状图（拆最小质数）" height="200" />
+  &nbsp;&nbsp;
+  <img src="images/tree-half.svg" alt="36 的树状图（对半拆）" height="170" />
+  &nbsp;&nbsp;
+  <img src="images/tree-layout.svg" alt="36 = 4×9 的树状图" height="150" />
+</p>
+
+画法：拆开的数下面连两条斜线到两个因数，质数画圈；叶子从左到右排开，拆开的数居中在它的因数上方。课本里还没核到样本，按常见写法画【推论】。
+
+| 选项 | 取值 | 默认 | 作用 |
+|---|---|---|---|
+| `split` | `prime` / `half` | `prime` | 语义式的拆法：每步拆出最小质数（质数在左、另一边继续拆）/ 每步拆成最接近的两个因数 |
+| `circle` | `true` / `false` | `true` | 质数叶子画圈 |
+| `result` | `true` / `false` | `false` | 下面写出结果算式，因数从小到大 |
+
+- 直写 `\shuzhuang*`：每条写一次拆分 `数 = 因数 \times 因数`（也可写 `×`、`*`），用 `\\` 分开；第一条的左边是最上面的数；有几个相同的数时先拆最左边还没拆的那个；没写拆法的数就是叶子。
+- 直写照写的画，不检查拆得对不对；只有真是质数的叶子才画圈，没拆完的合数不画圈。写错的数可以用 `\err{…}`、`\hong{…}` 包起来。直写能用 `circle`、`result`，不能用 `split`。
+- 英文别名：`\factortree`、`\factortree*`。MathML 表达不了树状图，导出时只给朗读文字。
+
 ## 语义式（竖式）
 
 ```latex
@@ -359,6 +387,8 @@ register(katex, { defaults: { carryAt: "sw" } });
 | `\dengshi*[选项]{… \\ …}` | `\stepeq*` | 递等式（直写，每行一步） |
 | `\duanchu[result]{数, 数}` | `\shortdiv` | 短除法（语义式：分解质因数、公因数、公倍数） |
 | `\duanchu*{除数 \| 数 … \\ …}` | `\shortdiv*` | 短除法（直写） |
+| `\shuzhuang[选项]{数}` | `\factortree` | 分解质因数树状图（语义式） |
+| `\shuzhuang*[选项]{数 = 因数 \times 因数 \\ …}` | `\factortree*` | 树状图（直写） |
 | `\jin{…}` | `\carry{…}` | 进位行 |
 | `\tui{…}` | `\borrow{…}` | 退位点 |
 | `\bu{…}` | `\pad{…}` | 补 0 |
@@ -431,7 +461,7 @@ shushiToMathML("74+88", "carryAt=sw", undefined, { carries: "above", wrap: false
 
 **兼容性**：主流浏览器不原生渲染 `mstack` / `mlongdiv`（它们不在 MathML Core 里）。用 W3C 官方 polyfill（elem-math）实测，两种写法的 30 个例子位置都正确。为适配 polyfill 做了三处处理：只用 `s` 和 `n` 两种方位（`se`、`ne` 会错位，左下进位写法在 MathML 里不区分）；坐在横线上的进位铺满整行透明占位（polyfill 用每格的下边框拼横线，带进位的格子会变高，不铺满横线就断成几截）；占位用与真进位同结构的透明数字（`mphantom` 会矮约 1px）。处理后横线下各格高度差 < 0.5px；进位下沿略压横线，是 polyfill 的进位样式（60% 字号、90% 行高）所致。运行 `bun run mathml:preview` 可生成对照页 `out/mathml-preview.html`。
 
-在 KaTeX 里，竖式输出中隐藏的 MathML 默认就是上面的 `mstack` 结构（供复制、辅助技术使用）；`register(katex, { mathml: "label" })` 改为只放朗读文字，`register(katex, { mathmlCarries: "above" })` 让进位写在上方。试写页每个竖式下方有“复制 MathML”按钮。
+在 KaTeX 里，竖式输出中隐藏的 MathML 默认就是上面的 `mstack` 结构（供复制、辅助技术使用）；`register(katex, { mathml: "label" })` 改为只放朗读文字，`register(katex, { mathmlCarries: "above" })` 让进位写在上方。试写页勾上“显示‘复制 MathML’按钮”后，每个竖式下方会出现复制按钮（默认不显示）。
 
 ## 接入方式
 

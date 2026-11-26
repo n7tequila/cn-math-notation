@@ -4,7 +4,7 @@
  * 运行：bun run docs:images
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { renderDuanchu, renderDuanchuLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
+import { renderDuanchu, renderDuanchuLayout, renderShuzhuang, renderShuzhuangLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
 import { EXAMPLES, SEMANTIC_EXAMPLES, type Example } from "../packages/playground/src/examples.ts";
 
 const INK = "#1f2a44";
@@ -38,4 +38,14 @@ const DUANCHU: readonly [string, string, string | undefined, boolean][] = [
   ["dc-layout", String.raw`2 | 36 48 \\ 2 | \err{17} 24 \\ 3 4`, undefined, true],
 ];
 for (const [id, src, opts, layout] of DUANCHU) write(id, layout ? renderDuanchuLayout(src, opts) : renderDuanchu(src, opts));
-console.log(`写出 ${EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length} 张图到 ${OUT}/`);
+/** 树状图演示图：[id, 写法, 选项, 是否直写]。 */
+const SHUZHUANG: readonly [string, string, string | undefined, boolean][] = [
+  ["tree-prime", "36", undefined, false],
+  ["tree-half", "36", "split=half, result", false],
+  ["tree-layout", String.raw`36 = 4 \times 9 \\ 4 = 2 \times 2 \\ 9 = 3 \times 3`, undefined, true],
+];
+for (const [id, src, opts, layout] of SHUZHUANG) {
+  write(id, layout ? renderShuzhuangLayout(src, opts) : renderShuzhuang(src, opts));
+}
+const total = EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length + SHUZHUANG.length;
+console.log(`写出 ${total} 张图到 ${OUT}/`);
