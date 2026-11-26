@@ -49,6 +49,15 @@ describe("GET /render.svg", () => {
     }
   });
 
+  test("同一请求每次的结果逐字节相同（MathJax 的字形编号不随调用次数变）", async () => {
+    const tex = String.raw`\dengshi{[100-(20+30)]\div5}`;
+    const first = await (await get("/render.svg", { tex })).text();
+    await get("/render.svg", { tex: String.raw`\frac{1}{2}` });
+    const second = await (await get("/render.svg", { tex })).text();
+    expect(second).toBe(first);
+    expect(first).not.toMatch(/MJX-\d+-/);
+  });
+
   test("短除法、树状图、十字相乘、综合除法都能出图", async () => {
     const cases = [
       String.raw`\duanchu[result]{36, 48}`,

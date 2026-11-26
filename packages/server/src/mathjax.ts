@@ -21,6 +21,12 @@ const doc = mathjax.document("", {
 });
 
 const ERROR_ATTR = /data-mjx-error="([^"]*)"/;
+/**
+ * MathJax 给字形定义编号 MJX-<计数>-<字体>-<字形>，计数每转换一次加一，同一公式每次输出都不同、没法缓存。
+ * 换成固定前缀：后半段已含字体与字形名，同名定义内容一定相同，几张 SVG 内嵌在同一页面里也不冲突。
+ */
+const GLYPH_ID_COUNTER = /\bMJX-\d+-/g;
+const STABLE_ID_PREFIX = "MJX-CMN-";
 
 function decodeEntities(s: string): string {
   return s
@@ -37,5 +43,5 @@ export async function texToSvg(tex: string): Promise<string> {
   const svg = adaptor.innerHTML(node);
   const error = ERROR_ATTR.exec(svg);
   if (error !== null) throw new RenderError(`TeX：${decodeEntities(error[1]!)}`);
-  return svg;
+  return svg.replace(GLYPH_ID_COUNTER, STABLE_ID_PREFIX);
 }
