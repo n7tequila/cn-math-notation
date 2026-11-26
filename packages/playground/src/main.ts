@@ -11,12 +11,13 @@ import {
   type ProcessMode,
   type StyleOptions,
 } from "@cn-math-notation/core";
-import { DENGSHI_EXAMPLES, EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
+import { DENGSHI_EXAMPLES, DUANCHU_EXAMPLES, EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
 
 const STORAGE_KEY = "cmn-playground-v1";
 const ALL_EXAMPLES = "__all__";
 const ALL_SEMANTIC = "__all_semantic__";
 const ALL_DENGSHI = "__all_dengshi__";
+const ALL_DUANCHU = "__all_duanchu";
 
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -171,15 +172,20 @@ function fillExamples(): void {
   const dengshi = document.createElement("optgroup");
   dengshi.label = "递等式";
   dengshi.append(...DENGSHI_EXAMPLES.map((ex, i) => option(`d${i}`, ex.name)), option(ALL_DENGSHI, "全部递等式例子"));
-  exampleSelect.append(semantic, layout, dengshi);
+  const duanchu = document.createElement("optgroup");
+  duanchu.label = "短除法";
+  duanchu.append(...DUANCHU_EXAMPLES.map((ex, i) => option(`c${i}`, ex.name)), option(ALL_DUANCHU, "全部短除法例子"));
+  exampleSelect.append(semantic, layout, dengshi, duanchu);
 }
 
 function exampleText(value: string): string {
   if (value === ALL_EXAMPLES) return EXAMPLES.map(toTex).join("\n\n");
   if (value === ALL_SEMANTIC) return SEMANTIC_EXAMPLES.map(semanticTex).join("\n\n");
   if (value === ALL_DENGSHI) return DENGSHI_EXAMPLES.map((ex) => ex.tex).join("\n\n");
+  if (value === ALL_DUANCHU) return DUANCHU_EXAMPLES.map((ex) => ex.tex).join("\n\n");
   const index = Number(value.slice(1));
   if (value.startsWith("d")) return DENGSHI_EXAMPLES[index]!.tex;
+  if (value.startsWith("c")) return DUANCHU_EXAMPLES[index]!.tex;
   return value.startsWith("s") ? semanticTex(SEMANTIC_EXAMPLES[index]!) : toTex(EXAMPLES[index]!);
 }
 

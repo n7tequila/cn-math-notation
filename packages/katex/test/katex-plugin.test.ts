@@ -113,6 +113,16 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect((html.match(/<mtr>/g) || []).length).toBe(3);
   });
 
+  test("短除法 \\duanchu / \\duanchu*：画出短除法，MathML 侧给朗读文字；写错报错", () => {
+    const html = katex.renderToString(String.raw`\duanchu[result]{36, 48}`);
+    expect(html).toContain("cmn-duanchu");
+    expect(html).toContain("(36, 48) = 2×2×3 = 12");
+    expect(html).toContain("<mtext>短除法：");
+    expect(katex.renderToString(String.raw`\shortdiv*{2 | 36 \\ 2 | 18 \\ 3 | 9 \\ 3}`)).toContain("cmn-dc-v");
+    expect(() => katex.renderToString(String.raw`\duanchu{37}`)).toThrow(/质数/);
+    expect(() => katex.renderToString(String.raw`\duanchu*{2 | x}`)).toThrow(/不认识/);
+  });
+
   test("递等式 [steps=1]：只写前几步，后面留空等号行；选项写错报错", () => {
     const html = katex.renderToString(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
     expect(html).toContain("underline");

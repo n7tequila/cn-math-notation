@@ -1,5 +1,6 @@
 /**
- * KaTeX 插件：注册 \shushi / \shushi*（竖式，英文别名 \vertical）与 \dengshi / \dengshi*（递等式，英文别名 \stepeq）。
+ * KaTeX 插件：注册 \shushi / \shushi*（竖式，英文别名 \vertical）、\dengshi / \dengshi*（递等式，英文别名 \stepeq）
+ * 与 \duanchu / \duanchu*（短除法，英文别名 \shortdiv）。
  *
  * 依赖 KaTeX 的不稳定接口 __defineFunction / __defineMacro（双下划线前缀），
  * 已在 KaTeX 0.19.1 上验证；peerDependencies 锁在 ~0.19.1。
@@ -17,6 +18,8 @@ import {
   parseLayout,
   parseOptions,
   renderLayout,
+  renderDuanchu,
+  renderDuanchuLayout,
   type Layout,
   type RenderedSvg,
   type StyleOptions,
@@ -50,6 +53,9 @@ const COMMAND_NAMES = ["\\shushi", "\\vertical"] as const;
 const DENGSHI_LAYOUT_FN = "\\cmn@dengshilayout";
 const DENGSHI_SEMANTIC_FN = "\\cmn@dengshisemantic";
 const DENGSHI_NAMES = ["\\dengshi", "\\stepeq"] as const;
+const DUANCHU_LAYOUT_FN = "\\cmn@duanchulayout";
+const DUANCHU_SEMANTIC_FN = "\\cmn@duanchusemantic";
+const DUANCHU_NAMES = ["\\duanchu", "\\shortdiv"] as const;
 
 /**
  * KaTeX 在 raw 参数里仍会展开宏（原型实测 0.19.1）：`~` 会变成 `\nobreakspace`，
@@ -195,6 +201,36 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
     katex.__defineMacro(name, `\\@ifstar${LAYOUT_FN}${SEMANTIC_FN}`);
   }
   registerDengshi(katex);
+  registerDuanchu(katex);
+}
+
+/** 短除法：本库画成 SVG；MathML 表达不了短除法（设计草案 §6），隐藏的 MathML 只给朗读文字。 */
+function registerDuanchu(katex: KatexLike): void {
+  const define = (fnName: string, render: (raw: string, options?: string) => RenderedSvg, label: string) =>
+    katex.__defineFunction({
+      type: "cmn-shushi",
+      names: [fnName],
+      numArgs: 1,
+      numOptionalArgs: 1,
+      argTypes: ["raw", "raw"],
+      allowedInText: true,
+      handler: (context: { parser: { mode: string } }, args: RawArg[], optArgs: (RawArg | null)[]): ShushiNode => {
+        try {
+          const rendered = render(normalizeRaw(args[0]!.string), optArgs[0]?.string);
+          return { type: "cmn-shushi", mode: context.parser.mode, rendered, mathml: undefined };
+        } catch (e) {
+          if (e instanceof ExpressionError || e instanceof LayoutSyntaxError || e instanceof OptionError) {
+            throw new katex.ParseError(`${label}：${e.message}`);
+          }
+          throw e;
+        }
+      },
+    });
+  define(DUANCHU_LAYOUT_FN, (raw, options) => renderDuanchuLayout(raw, options, { display: "block" }), "\\duanchu*");
+  define(DUANCHU_SEMANTIC_FN, (raw, options) => renderDuanchu(raw, options, { display: "block" }), "\\duanchu");
+  for (const name of DUANCHU_NAMES) {
+    katex.__defineMacro(name, `\\@ifstar${DUANCHU_LAYOUT_FN}${DUANCHU_SEMANTIC_FN}`);
+  }
 }
 
 /**

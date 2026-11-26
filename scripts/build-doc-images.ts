@@ -4,7 +4,7 @@
  * 运行：bun run docs:images
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
+import { renderDuanchu, renderDuanchuLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
 import { EXAMPLES, SEMANTIC_EXAMPLES, type Example } from "../packages/playground/src/examples.ts";
 
 const INK = "#1f2a44";
@@ -30,4 +30,12 @@ function write(id: string, out: RenderedSvg): void {
 mkdirSync(OUT, { recursive: true });
 for (const ex of [...EXAMPLES, ...VARIANTS]) write(ex.id, renderShushiLayout(ex.body, ex.options));
 for (const ex of SEMANTIC_EXAMPLES) write(ex.id, renderShushi(ex.expr, ex.options));
-console.log(`写出 ${EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length} 张图到 ${OUT}/`);
+/** 短除法演示图：[id, 写法, 选项, 是否直写]。 */
+const DUANCHU: readonly [string, string, string | undefined, boolean][] = [
+  ["dc-factor", "36", undefined, false],
+  ["dc-two", "36, 48", "result", false],
+  ["dc-three", "4, 6, 9", "result", false],
+  ["dc-layout", String.raw`2 | 36 48 \\ 2 | \err{17} 24 \\ 3 4`, undefined, true],
+];
+for (const [id, src, opts, layout] of DUANCHU) write(id, layout ? renderDuanchuLayout(src, opts) : renderDuanchu(src, opts));
+console.log(`写出 ${EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length} 张图到 ${OUT}/`);

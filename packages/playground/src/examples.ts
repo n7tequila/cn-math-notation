@@ -98,6 +98,14 @@ export function semanticTex(example: SemanticExample): string {
   return `\\shushi${opts}{${example.expr}}`;
 }
 
+/** 短除法例子：整段 TeX。 */
+export const DUANCHU_EXAMPLES: readonly DengshiExample[] = [
+  { id: "dc-factor", name: "短除法分解质因数 36", tex: String.raw`\duanchu{36}` },
+  { id: "dc-two", name: "短除法求公因数、公倍数 36 和 48", tex: String.raw`\duanchu[result]{36, 48}` },
+  { id: "dc-three", name: "短除法求三个数的公倍数 4、6、9", tex: String.raw`\duanchu[result]{4, 6, 9}` },
+  { id: "dc-layout", name: "短除法直写（标出写错的数）", tex: String.raw`\duanchu*{2 | 36 48 \\ 2 | \err{17} 24 \\ 3 4}` },
+];
+
 /** 递等式例子：整段 TeX。语义式只写算式；直写用 \\ 分行。 */
 export interface DengshiExample {
   readonly id: string;

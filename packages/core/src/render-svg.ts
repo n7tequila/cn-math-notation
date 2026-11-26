@@ -106,7 +106,7 @@ function text(x: number, y: number, body: string, size: number, fill: string, ex
   return `<text x="${fmt(x)}" y="${fmt(y)}" font-size="${size}" text-anchor="middle" fill="${fill}"${extra}>${body}</text>`;
 }
 
-function fmt(n: number): string {
+export function fmt(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(2);
 }
 
@@ -248,7 +248,7 @@ export function describe(layout: Layout): string {
  * 根元素内联样式：嵌进 KaTeX 时，katex.css 的 `.katex svg{position:absolute;height:inherit;stroke:currentColor…}`
  * 与 `.katex svg path{stroke:none}` 会压扁竖式、抹掉括号（试写页实测）。内联样式优先级更高，可盖过它们。
  */
-function rootStyle(width: number, height: number, display: RootDisplay): string {
+export function rootStyle(width: number, height: number, display: RootDisplay): string {
   return [
     `display:${display}`,
     "position:static",
