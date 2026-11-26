@@ -45,6 +45,13 @@ describe("十字相乘语义式", () => {
     expect(buildCrossMul("x^2+5xy+6y^2", "result").result).toEqual(["x² + 5xy + 6y² = (x + 2y)(x + 3y)"]);
   });
 
+  test("problem（默认开）：上方写原题；problem=false 不写；直写没有原题", () => {
+    expect(buildCrossMul("x^2+5x+6").problem).toBe("x² + 5x + 6");
+    expect(buildCrossMul("6x^2-7x-3").problem).toBe("6x² − 7x − 3");
+    expect(buildCrossMul("x^2+5x+6", "problem=false").problem).toBeUndefined();
+    expect(parseCrossMulLayout(String.raw`x & +2 \\ x & +3`).problem).toBeUndefined();
+  });
+
   test("不能用十字相乘的报错", () => {
     expect(() => buildCrossMul("x^2+x+1")).toThrow(/整数范围内/);
     expect(() => buildCrossMul("2x^2+4x+2")).toThrow(/公因式/);
@@ -80,7 +87,9 @@ describe("十字相乘渲染", () => {
     expect((svg.match(/class="cmn-cross-line"/g) ?? []).length).toBe(2);
     expect(svg).toContain('class="cmn-cross-rule"');
     expect(svg).toContain('font-style="italic"');
-    expect(label).toBe("十字相乘：x 与 +2，x 与 +3；3x + 2x = 5x");
+    expect(label).toBe("十字相乘：x² + 5x + 6；x 与 +2，x 与 +3；3x + 2x = 5x");
+    expect(svg).toContain('class="cmn-problem"');
+    expect(renderShizi("x^2+5x+6", "problem=false").svg).not.toContain("cmn-problem");
     expect(renderShizi("x^2+5x+6", "check=false").svg).not.toContain("cmn-cross-rule");
   });
 

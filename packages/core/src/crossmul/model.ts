@@ -14,6 +14,8 @@ export interface CrossMulLayout {
   readonly right: readonly [CrossTerm, CrossTerm];
   /** 横线下的验算行，如 3x + 2x = 5x。 */
   readonly check?: CrossTerm;
+  /** 写在上方的原题（problem 选项，语义式默认开；直写没有）。 */
+  readonly problem?: string;
   /** 分解结果（result 选项）。 */
   readonly result: readonly string[];
 }

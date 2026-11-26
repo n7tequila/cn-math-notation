@@ -1,6 +1,6 @@
 # @cn-math-notation/katex
 
-[KaTeX](https://katex.org) 插件：注册 `\shushi`（竖式）、`\dengshi`（递等式）、`\duanchu`（短除法）、`\shuzhuang`（树状图）与 `\shizi`（十字相乘）命令，在公式里画出和中国课本一样的竖式和递等式。普通公式照常由 KaTeX 排版。
+[KaTeX](https://katex.org) 插件：注册 `\shushi`（竖式）、`\dengshi`（递等式）、`\duanchu`（短除法）、`\shuzhuang`（树状图）、`\shizi`（十字相乘）与 `\zonghe`（综合除法）命令，在公式里画出和中国课本一样的竖式和递等式。普通公式照常由 KaTeX 排版。
 
 <img src="https://raw.githubusercontent.com/n7tequila/cn-math-notation/main/docs/images/sem-mul-carry-color.svg" alt="538×26 竖式" height="250" /> <img src="https://raw.githubusercontent.com/n7tequila/cn-math-notation/main/docs/images/div-remainder.svg" alt="71÷4 竖式" height="250" />
 
@@ -28,6 +28,7 @@ katex.render(String.raw`\shushi{403-167}`, element, { displayMode: true });
 | `\duanchu[result]{36, 48}` | 短除法：分解质因数、两三个数的公因数与公倍数（`\duanchu*{2 \| 36 48 \\ …}` 直写） |
 | `\shuzhuang{36}` | 分解质因数树状图（`split=half` 对半拆；`\shuzhuang*{36 = 4 \times 9 \\ …}` 直写） |
 | `\shushi{(x^3-1)\div(x-1)}` | 多项式竖式：算式里有字母就按次数对齐（乘法、长除法，`[coefficients]` 分离系数法） |
+| `\zonghe{(x^2+3x+2)\div(x+1)}` | 综合除法：除以 x − a（`[result]` 写商与余数；`\zonghe*{…}` 直写） |
 | `\shizi{x^2+5x+6}` | 十字相乘（`[result]` 写分解结果；`\shizi*{x & +2 \\ x & +3}` 直写） |
 | `\dengshi[steps=1]{2\times3\times4+1}` | 只写前 1 步，其余留空等号行（`rest=cut` 直接截断） |
 

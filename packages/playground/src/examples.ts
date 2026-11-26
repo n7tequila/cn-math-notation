@@ -125,6 +125,13 @@ export const SHIZI_EXAMPLES: readonly DengshiExample[] = [
   { id: "cross-layout", name: "十字相乘直写（标出写错的角）", tex: String.raw`\shizi*{x & +2 \\ x & \err{-3} \\ 3x-2x=x}` },
 ];
 
+/** 综合除法例子：整段 TeX。 */
+export const ZONGHE_EXAMPLES: readonly DengshiExample[] = [
+  { id: "zh-basic", name: "综合除法 (x²+3x+2)÷(x+1)", tex: String.raw`\zonghe{(x^2+3x+2)\div(x+1)}` },
+  { id: "zh-rem", name: "综合除法 有余数、写结果 (2x³−3x+5)÷(x−2)", tex: String.raw`\zonghe[result]{(2x^3-3x+5)\div(x-2)}` },
+  { id: "zh-layout", name: "综合除法直写（标出算错的格）", tex: String.raw`\zonghe*{-1 | 1 & 3 & 2 \\ & -1 & -2 \\ 1 & \err{4} & 0}` },
+];
+
 /** 递等式例子：整段 TeX。语义式只写算式；直写用 \\ 分行。 */
 export interface DengshiExample {
   readonly id: string;

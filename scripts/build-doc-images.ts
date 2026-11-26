@@ -4,7 +4,7 @@
  * 运行：bun run docs:images
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { renderDuanchu, renderDuanchuLayout, renderShizi, renderShuzhuang, renderShuzhuangLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
+import { renderDuanchu, renderDuanchuLayout, renderShizi, renderShuzhuang, renderZonghe, renderShuzhuangLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
 import { EXAMPLES, SEMANTIC_EXAMPLES, type Example } from "../packages/playground/src/examples.ts";
 
 const INK = "#1f2a44";
@@ -53,5 +53,12 @@ const SHIZI: readonly [string, string, string | undefined][] = [
   ["cross-a", "6x^2-7x-3", "result"],
 ];
 for (const [id, src, opts] of SHIZI) write(id, renderShizi(src, opts));
-const total = EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length + SHUZHUANG.length + SHIZI.length;
+/** 综合除法演示图：[id, 写法, 选项]。 */
+const ZONGHE: readonly [string, string, string | undefined][] = [
+  ["zh-basic", String.raw`(x^2+3x+2)\div(x+1)`, undefined],
+  ["zh-rem", String.raw`(2x^3-3x+5)\div(x-2)`, "result"],
+];
+for (const [id, src, opts] of ZONGHE) write(id, renderZonghe(src, opts));
+const total =
+  EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length + SHUZHUANG.length + SHIZI.length + ZONGHE.length;
 console.log(`写出 ${total} 张图到 ${OUT}/`);

@@ -11,7 +11,7 @@ import {
   type ProcessMode,
   type StyleOptions,
 } from "@cn-math-notation/core";
-import { DENGSHI_EXAMPLES, DUANCHU_EXAMPLES, EXAMPLES, SHIZI_EXAMPLES, SHUZHUANG_EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
+import { DENGSHI_EXAMPLES, DUANCHU_EXAMPLES, EXAMPLES, SHIZI_EXAMPLES, SHUZHUANG_EXAMPLES, ZONGHE_EXAMPLES, SEMANTIC_EXAMPLES, semanticTex, toTex } from "./examples.ts";
 
 const STORAGE_KEY = "cmn-playground-v1";
 const ALL_EXAMPLES = "__all__";
@@ -20,6 +20,7 @@ const ALL_DENGSHI = "__all_dengshi__";
 const ALL_DUANCHU = "__all_duanchu";
 const ALL_SHUZHUANG = "__all_shuzhuang";
 const ALL_SHIZI = "__all_shizi";
+const ALL_ZONGHE = "__all_zonghe";
 
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -187,13 +188,17 @@ function fillExamples(): void {
   const shizi = document.createElement("optgroup");
   shizi.label = "十字相乘";
   shizi.append(...SHIZI_EXAMPLES.map((ex, i) => option(`x${i}`, ex.name)), option(ALL_SHIZI, "全部十字相乘例子"));
-  exampleSelect.append(semantic, layout, dengshi, duanchu, shuzhuang, shizi);
+  const zonghe = document.createElement("optgroup");
+  zonghe.label = "综合除法";
+  zonghe.append(...ZONGHE_EXAMPLES.map((ex, i) => option(`z${i}`, ex.name)), option(ALL_ZONGHE, "全部综合除法例子"));
+  exampleSelect.append(semantic, layout, dengshi, duanchu, shuzhuang, shizi, zonghe);
 }
 
 function exampleText(value: string): string {
   if (value === ALL_EXAMPLES) return EXAMPLES.map(toTex).join("\n\n");
   if (value === ALL_SEMANTIC) return SEMANTIC_EXAMPLES.map(semanticTex).join("\n\n");
   if (value === ALL_DENGSHI) return DENGSHI_EXAMPLES.map((ex) => ex.tex).join("\n\n");
+  if (value === ALL_ZONGHE) return ZONGHE_EXAMPLES.map((ex) => ex.tex).join("\n\n");
   if (value === ALL_SHIZI) return SHIZI_EXAMPLES.map((ex) => ex.tex).join("\n\n");
   if (value === ALL_SHUZHUANG) return SHUZHUANG_EXAMPLES.map((ex) => ex.tex).join("\n\n");
   if (value === ALL_DUANCHU) return DUANCHU_EXAMPLES.map((ex) => ex.tex).join("\n\n");
@@ -202,6 +207,7 @@ function exampleText(value: string): string {
   if (value.startsWith("c")) return DUANCHU_EXAMPLES[index]!.tex;
   if (value.startsWith("t")) return SHUZHUANG_EXAMPLES[index]!.tex;
   if (value.startsWith("x")) return SHIZI_EXAMPLES[index]!.tex;
+  if (value.startsWith("z")) return ZONGHE_EXAMPLES[index]!.tex;
   return value.startsWith("s") ? semanticTex(SEMANTIC_EXAMPLES[index]!) : toTex(EXAMPLES[index]!);
 }
 

@@ -67,6 +67,7 @@ export function buildCrossMulFrom(source: string, opts: CrossMulOptions): CrossM
     left: [plainTerm(monomial(a1, q.u)), plainTerm(monomial(a2, q.u))],
     right: [plainTerm(signed(c1, v)), plainTerm(signed(c2, v))],
     ...(opts.check ? { check: plainTerm(check) } : {}),
+    ...(opts.problem ? { problem: original } : {}),
     result: opts.result ? [`${original} = ${factor(a1, c1)}${factor(a2, c2)}`] : [],
   };
 }

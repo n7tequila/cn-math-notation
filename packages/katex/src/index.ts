@@ -1,7 +1,7 @@
 /**
  * KaTeX 插件：注册 \shushi / \shushi*（竖式，英文别名 \vertical）、\dengshi / \dengshi*（递等式，英文别名 \stepeq）
  * 、\duanchu / \duanchu*（短除法，英文别名 \shortdiv）、\shuzhuang / \shuzhuang*（树状图，英文别名 \factortree）
- * 与 \shizi / \shizi*（十字相乘，英文别名 \crossmul）。
+ * 、\shizi / \shizi*（十字相乘，英文别名 \crossmul）与 \zonghe / \zonghe*（综合除法，英文别名 \synthdiv）。
  *
  * 依赖 KaTeX 的不稳定接口 __defineFunction / __defineMacro（双下划线前缀），
  * 已在 KaTeX 0.19.1 上验证；peerDependencies 锁在 ~0.19.1。
@@ -22,6 +22,8 @@ import {
   renderDuanchu,
   renderDuanchuLayout,
   renderShizi,
+  renderZonghe,
+  renderZongheLayout,
   renderShiziLayout,
   renderShuzhuang,
   renderShuzhuangLayout,
@@ -61,6 +63,7 @@ const DENGSHI_NAMES = ["\\dengshi", "\\stepeq"] as const;
 const DUANCHU_NAMES = ["\\duanchu", "\\shortdiv"] as const;
 const SHUZHUANG_NAMES = ["\\shuzhuang", "\\factortree"] as const;
 const SHIZI_NAMES = ["\\shizi", "\\crossmul"] as const;
+const ZONGHE_NAMES = ["\\zonghe", "\\synthdiv"] as const;
 
 /**
  * KaTeX 在 raw 参数里仍会展开宏（原型实测 0.19.1）：`~` 会变成 `\nobreakspace`，
@@ -209,12 +212,13 @@ export function register(katex: KatexLike, options: RegisterOptions = {}): void 
   registerSvgCommand(katex, "duanchu", DUANCHU_NAMES, renderDuanchu, renderDuanchuLayout);
   registerSvgCommand(katex, "shuzhuang", SHUZHUANG_NAMES, renderShuzhuang, renderShuzhuangLayout);
   registerSvgCommand(katex, "shizi", SHIZI_NAMES, renderShizi, renderShiziLayout);
+  registerSvgCommand(katex, "zonghe", ZONGHE_NAMES, renderZonghe, renderZongheLayout);
 }
 
 type SvgRenderer = (raw: string, options: string | undefined, render: { display: "block" }) => RenderedSvg;
 
 /**
- * 短除法、树状图、十字相乘：本库画成 SVG；MathML 表达不了这几种写法（设计草案 §6），隐藏的 MathML 只给朗读文字。
+ * 短除法、树状图、十字相乘、综合除法：本库画成 SVG；MathML 表达不了这几种写法（设计草案 §6），隐藏的 MathML 只给朗读文字。
  * 注册 \<name>[选项]{…}（语义式）与 \<name>*[选项]{…}（直写）以及英文别名。
  */
 function registerSvgCommand(

@@ -18,6 +18,8 @@ const RULE_GAP = 8;
 const LINE_H = 32;
 const SMALL_FONT = 20;
 const SMALL_CHAR_W = 11;
+/** 上方原题一行的高度。 */
+const PROBLEM_H = 34;
 
 function width(text: string, charW: number): number {
   return [...text].length * charW;
@@ -43,7 +45,8 @@ function drawTerm(t: CrossTerm, x: number, baseline: number, anchor: "start" | "
 export function describeCrossMul(layout: CrossMulLayout): string {
   const rows = [0, 1].map((i) => `${layout.left[i]!.text} 与 ${layout.right[i]!.text}`).join("，");
   const tail = [layout.check?.text, ...layout.result].filter((s): s is string => s !== undefined);
-  return `十字相乘：${rows}${tail.length === 0 ? "" : `；${tail.join("；")}`}`;
+  const problem = layout.problem === undefined ? "" : `${layout.problem}；`;
+  return `十字相乘：${problem}${rows}${tail.length === 0 ? "" : `；${tail.join("；")}`}`;
 }
 
 function crossLine(x1: number, y1: number, x2: number, y2: number): string {
@@ -56,7 +59,8 @@ export function renderCrossMul(layout: CrossMulLayout, render: RenderOptions = {
   const leftEdge = PAD + leftW; // 左列右对齐到这里
   const rightEdge = leftEdge + CROSS_W; // 右列左对齐从这里起
   const gridRight = rightEdge + rightW;
-  const topBase = PAD + ROW_H * 0.75;
+  const top0 = PAD + (layout.problem === undefined ? 0 : PROBLEM_H);
+  const topBase = top0 + ROW_H * 0.75;
   const bottomBase = topBase + CROSS_H + ROW_H * 0.6;
   const midTop = topBase - ROW_H * 0.3;
   const midBottom = bottomBase - ROW_H * 0.3;
@@ -68,8 +72,13 @@ export function renderCrossMul(layout: CrossMulLayout, render: RenderOptions = {
     crossLine(leftEdge + 8, midTop + 6, rightEdge - 8, midBottom - 6),
     crossLine(leftEdge + 8, midBottom - 6, rightEdge - 8, midTop + 6),
   ];
+  if (layout.problem !== undefined) {
+    body.push(
+      `<text class="cmn-problem" x="${PAD}" y="${fmt(PAD + PROBLEM_H * 0.7)}" font-size="${FONT_SIZE}" fill="${COLORS.ink}">${mathText(layout.problem)}</text>`,
+    );
+  }
   let y = bottomBase + ROW_H * 0.3;
-  let contentRight = gridRight;
+  let contentRight = Math.max(gridRight, layout.problem === undefined ? 0 : PAD + width(layout.problem, CHAR_W));
   if (layout.check !== undefined) {
     y += RULE_GAP;
     const checkW = width(layout.check.text, CHAR_W);

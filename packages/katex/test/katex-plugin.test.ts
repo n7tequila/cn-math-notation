@@ -151,6 +151,15 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect(() => katex.renderToString(String.raw`\shushi{(2x^2+1)\div(3x+1)}`)).toThrow(/整数/);
   });
 
+  test("综合除法 \\zonghe / \\zonghe*：画出竖线、横线与余数线，MathML 侧给朗读文字；写错报错", () => {
+    const html = katex.renderToString(String.raw`\zonghe[result]{(x^3-1)\div(x-1)}`);
+    expect(html).toContain("cmn-zonghe");
+    expect(html).toContain("<mtext>综合除法：");
+    expect(html).toContain("商 x² + x + 1，余数 0");
+    expect(katex.renderToString(String.raw`\synthdiv*{-1 | 1 & 3 & 2 \\ & -1 & -2 \\ 1 & 2 & 0}`)).toContain("cmn-zh-rem");
+    expect(() => katex.renderToString(String.raw`\zonghe{(x^2+1)\div(2x+1)}`)).toThrow(/x − a/);
+  });
+
   test("递等式 [steps=1]：只写前几步，后面留空等号行；选项写错报错", () => {
     const html = katex.renderToString(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
     expect(html).toContain("underline");
