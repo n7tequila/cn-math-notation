@@ -5,6 +5,8 @@ import { addLayout, subLayout } from "./add-sub.ts";
 import { divLayout } from "./div.ts";
 import { mulLayout } from "./mul.ts";
 import { parseExpression, type Expression } from "./parse-expr.ts";
+import { hasLetters } from "../math-text.ts";
+import { polynomialLayout } from "../polynomial/layout.ts";
 
 export { ExpressionError } from "./numbers.ts";
 export { parseExpression, type Expression } from "./parse-expr.ts";
@@ -18,6 +20,8 @@ export function showsProcess(e: Expression, style: StyleOptions): boolean {
 }
 
 export function buildSemantic(source: string, style: StyleOptions): Layout {
+  // 算式里有字母（命令名除外）就按多项式竖式画（维护者 2026-11-26 定沿用 \shushi）
+  if (hasLetters(source.replace(/\\[a-zA-Z]+/g, ""))) return polynomialLayout(source, style);
   const e = parseExpression(source);
   const process = showsProcess(e, style);
   switch (e.op) {

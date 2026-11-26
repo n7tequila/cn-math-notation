@@ -42,6 +42,7 @@ const markPoint = byId<HTMLInputElement>("markPoint");
 const markAppended = byId<HTMLInputElement>("markAppended");
 const remainder = byId<HTMLInputElement>("remainder");
 const pointColumn = byId<HTMLInputElement>("pointColumn");
+const coefficients = byId<HTMLInputElement>("coefficients");
 /** 试写页自己的开关（不是样式选项）：竖式下面显示“复制 MathML”按钮，默认关。 */
 const showCopy = byId<HTMLInputElement>("showCopy");
 const mode = byId<HTMLSelectElement>("mode");
@@ -66,6 +67,7 @@ function currentDefaults(): StyleOptions {
     markAppended: markAppended.checked,
     remainder: remainder.checked,
     pointColumn: pointColumn.checked,
+    coefficients: coefficients.checked,
   };
 }
 
@@ -212,7 +214,7 @@ exampleSelect.addEventListener("change", () => {
   source.focus();
 });
 
-for (const control of [carryAt, operatorPlacement, guides, padZero, strikeZero, multiCarry, colorByDigit, carry, markPoint, markAppended, remainder, pointColumn, showCopy, mode, processMode]) {
+for (const control of [carryAt, operatorPlacement, guides, padZero, strikeZero, multiCarry, colorByDigit, carry, markPoint, markAppended, remainder, pointColumn, coefficients, showCopy, mode, processMode]) {
   control.addEventListener("change", () => {
     applyDefaults();
     render();

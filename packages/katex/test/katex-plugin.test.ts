@@ -143,6 +143,14 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect(() => katex.renderToString(String.raw`\shizi*{x & +2}`)).toThrow(/两行/);
   });
 
+  test("多项式竖式：\\shushi 里有字母就按次数对齐画，直写用 & 分格", () => {
+    const html = katex.renderToString(String.raw`\shushi{(x^2+3x+2)\div(x+1)}`);
+    expect(html).toContain("cmn-shushi");
+    expect(html).toContain("<msup><mi>x</mi><mn>2</mn></msup>");
+    expect(katex.renderToString(String.raw`\shushi*{x^2 & +2x & -3 \\ \times & 2x & +1}`)).toContain('font-style="italic"');
+    expect(() => katex.renderToString(String.raw`\shushi{(2x^2+1)\div(3x+1)}`)).toThrow(/整数/);
+  });
+
   test("递等式 [steps=1]：只写前几步，后面留空等号行；选项写错报错", () => {
     const html = katex.renderToString(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
     expect(html).toContain("underline");

@@ -147,7 +147,7 @@ describe("例 12 孩子的错误过程", () => {
 describe("报错", () => {
   const bad: [string, string, RegExp][] = [
     ["运算符写在中间", String.raw`7 + 4`, /开头/],
-    ["& 分格属第三期", String.raw`1 & 3`, /第三期/],
+    ["& 分格里只能写一项", String.raw`1 & \frac{1}{2}`, /只能写一项/],
     ["花括号不配对", String.raw`\tui{4 0 3`, /配对/],
     ["不认识的命令", String.raw`\foo{1}`, /不认识的命令/],
     ["两个小数点", String.raw`1.2.3`, /两个小数点/],

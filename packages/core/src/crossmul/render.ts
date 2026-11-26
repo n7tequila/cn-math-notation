@@ -4,6 +4,7 @@
  * 整张图用衬线体（与数学书一致），字母斜体，数字与符号正体。
  */
 import { COLORS, FONT_SIZE, fmt, rootStyle, type RenderOptions, type RenderedSvg } from "../render-svg.ts";
+import { mathTextSvg as mathText } from "../math-text.ts";
 import type { CrossMulLayout, CrossTerm } from "./model.ts";
 
 const CHAR_W = 13;
@@ -17,15 +18,6 @@ const RULE_GAP = 8;
 const LINE_H = 32;
 const SMALL_FONT = 20;
 const SMALL_CHAR_W = 11;
-
-/** 文字排成 tspan：字母斜体衬线，其余正体。 */
-function mathText(text: string): string {
-  return [...text.matchAll(/[a-zA-Z]+|[^a-zA-Z]+/g)]
-    .map(([run]) =>
-      /^[a-zA-Z]/.test(run) ? `<tspan font-style="italic">${run}</tspan>` : run,
-    )
-    .join("");
-}
 
 function width(text: string, charW: number): number {
   return [...text].length * charW;

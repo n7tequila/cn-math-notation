@@ -4,18 +4,11 @@
  * 可用 `\err{…}`、`\hong{…}` 包住一个角或验算行。
  */
 import type { CellMark } from "../model.ts";
+import { prettyTerm } from "../math-text.ts";
 import { LayoutSyntaxError } from "../parse-layout.ts";
 import type { CrossMulLayout, CrossTerm } from "./model.ts";
 
 const MARKS: Readonly<Record<string, CellMark>> = { err: "err", hong: "hong", hl: "hong" };
-
-/** 排版：负号统一为 −，^2 写成 ²，^3 写成 ³。 */
-function pretty(text: string): string {
-  return text
-    .replace(/\^\{?2\}?/g, "²")
-    .replace(/\^\{?3\}?/g, "³")
-    .replace(/-/g, "−");
-}
 
 function parseTerm(raw: string, allowEquation: boolean): CrossTerm {
   const t = raw.trim();
@@ -32,7 +25,7 @@ function parseTerm(raw: string, allowEquation: boolean): CrossTerm {
   if (body === "" || !allowed.test(body)) {
     throw new LayoutSyntaxError(`十字相乘的每个角只能写简单的单项式（如 2x、-3、+2y）：“${t}”`);
   }
-  return { text: pretty(body.replace(/\s+/g, "")), marks };
+  return { text: prettyTerm(body), marks };
 }
 
 export function parseCrossMulLayout(source: string): CrossMulLayout {

@@ -27,6 +27,7 @@ katex.render(String.raw`\shushi{403-167}`, element, { displayMode: true });
 | `\dengshi*{25\times(40+4) \\ 25\times44 \\ 1100}` | 递等式直写：每行一步 |
 | `\duanchu[result]{36, 48}` | 短除法：分解质因数、两三个数的公因数与公倍数（`\duanchu*{2 \| 36 48 \\ …}` 直写） |
 | `\shuzhuang{36}` | 分解质因数树状图（`split=half` 对半拆；`\shuzhuang*{36 = 4 \times 9 \\ …}` 直写） |
+| `\shushi{(x^3-1)\div(x-1)}` | 多项式竖式：算式里有字母就按次数对齐（乘法、长除法，`[coefficients]` 分离系数法） |
 | `\shizi{x^2+5x+6}` | 十字相乘（`[result]` 写分解结果；`\shizi*{x & +2 \\ x & +3}` 直写） |
 | `\dengshi[steps=1]{2\times3\times4+1}` | 只写前 1 步，其余留空等号行（`rest=cut` 直接截断） |
 

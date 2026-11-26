@@ -90,6 +90,9 @@ export const SEMANTIC_EXAMPLES: readonly SemanticExample[] = [
   { id: "sem-decimal-div", name: "小数除法 5.8÷4（添 0 标红）", expr: String.raw`5.8\div4`, options: "markAppended" },
   { id: "sem-decimal-div-int", name: "整数除成小数 12÷50", expr: String.raw`12\div50` },
   { id: "sem-decimal-divisor", name: "除数是小数 6.78÷1.2", expr: String.raw`6.78\div1.2` },
+  { id: "sem-poly-mul", name: "多项式乘法 (x²+2x−3)(2x+1)", expr: "(x^2+2x-3)(2x+1)" },
+  { id: "sem-poly-div", name: "多项式长除法 (x³−1)÷(x−1)", expr: String.raw`(x^3-1)\div(x-1)` },
+  { id: "sem-poly-coef", name: "分离系数法 (x³−1)÷(x−1)", expr: String.raw`(x^3-1)\div(x-1)`, options: "coefficients" },
   { id: "sem-child-answer", name: "孩子的答案 403−167=346", expr: "403-167=346" },
 ];
 

@@ -99,6 +99,7 @@ describe("parseOptions", () => {
       markAppended: false,
       remainder: false,
       pointColumn: false,
+      coefficients: false,
     });
   });
   test("只写键名表示 true", () => {

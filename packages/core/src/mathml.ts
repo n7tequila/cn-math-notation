@@ -14,6 +14,7 @@
  */
 import type { CarryRow, Cell, DigitRow, Layout, Operator, PointMark } from "./model.ts";
 import { DEFAULT_STYLE, type StyleOptions } from "./options.ts";
+import { hasLetters, termToMathML } from "./math-text.ts";
 import { toGapPoints } from "./point-style.ts";
 import { COLORS, describe } from "./render-svg.ts";
 
@@ -71,8 +72,14 @@ function cellElement(cell: Cell): string {
   const color = cell.color ?? (marks.has("hong") ? COLORS.teach : undefined);
   if (color !== undefined) attrs.push(`mathcolor="${escapeXml(color)}"`);
   if (marks.has("err")) attrs.push(`mathbackground="${COLORS.errBg}"`);
-  const text = cell.content.kind === "digit" ? cell.content.text : ".";
-  let el = `<mn${attrs.length > 0 ? " " + attrs.join(" ") : ""}>${text}</mn>`;
+  let el: string;
+  if (cell.content.kind === "term") {
+    const term = termToMathML(cell.content.text);
+    el = attrs.length > 0 ? `<mrow ${attrs.join(" ")}>${term}</mrow>` : term;
+  } else {
+    const text = cell.content.kind === "digit" ? cell.content.text : ".";
+    el = `<mn${attrs.length > 0 ? " " + attrs.join(" ") : ""}>${text}</mn>`;
+  }
   if (marks.has("bu")) el = `<menclose notation="box" mathcolor="${COLORS.teach}">${el}</menclose>`;
   if (marks.has("hua")) el = `<menclose notation="updiagonalstrike">${el}</menclose>`;
   return cell.point === undefined ? el : `<mrow>${el}${pointElement(cell.point)}</mrow>`;
@@ -224,7 +231,7 @@ function stackBody(layout: Layout, skip: ReadonlySet<number>, mode: "textbook" |
 function divisorElement(row: DigitRow): string {
   const divisor = row.divisor ?? "";
   const k = row.divisorStruckPoint;
-  if (k === undefined) return `<mn>${escapeXml(divisor)}</mn>`;
+  if (k === undefined) return hasLetters(divisor) ? termToMathML(divisor) : `<mn>${escapeXml(divisor)}</mn>`;
   const part = (s: string): string => (s === "" ? "" : `<mn>${escapeXml(s)}</mn>`);
   return `<mrow>${part(divisor.slice(0, k))}${pointElement("hua")}${part(divisor.slice(k))}</mrow>`;
 }

@@ -44,6 +44,8 @@ export interface StyleOptions {
   readonly remainder: boolean;
   /** 小数点单独占一条窄列（加减法课本样本的写法）。默认关：小数点写在两个数字中间（维护者 2026-11-26 定）。 */
   readonly pointColumn: boolean;
+  /** 多项式竖式用分离系数法：只写系数，缺项写 0（默认关）。 */
+  readonly coefficients: boolean;
 }
 
 export const DEFAULT_STYLE: StyleOptions = {
@@ -61,6 +63,7 @@ export const DEFAULT_STYLE: StyleOptions = {
   markAppended: false,
   remainder: false,
   pointColumn: false,
+  coefficients: false,
 };
 
 const BOOLEAN_KEYS = [
@@ -74,6 +77,7 @@ const BOOLEAN_KEYS = [
   "markAppended",
   "remainder",
   "pointColumn",
+  "coefficients",
 ] as const;
 
 export class OptionError extends Error {

@@ -11,6 +11,8 @@ export type CellMark = "tui" | "err" | "hong" | "bu" | "hua";
 export type CellContent =
   | { readonly kind: "digit"; readonly text: string }
   | { readonly kind: "point" }
+  /** 多项式竖式的一项（如 +3x、x²），整项占一格；列号 = 次数（设计草案 §5.7）。 */
+  | { readonly kind: "term"; readonly text: string }
   | { readonly kind: "blank" };
 
 /**

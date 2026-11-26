@@ -4,6 +4,7 @@
  */
 import type { CarryRow, Cell, DigitRow, Layout, Operator, PointMark, Row } from "./model.ts";
 import { DEFAULT_STYLE, type StyleOptions } from "./options.ts";
+import { hasLetters, mathTextSvg } from "./math-text.ts";
 import { toGapPoints } from "./point-style.ts";
 
 export const FONT_SIZE = 24;
@@ -19,6 +20,10 @@ const BRACKET_W = 12;
 const DIVISOR_CHAR_W = 14;
 /** 除数里划掉的小数点额外占的宽度。 */
 const DIVISOR_POINT_W = 10;
+/** 多项式的项：每个字符的估计宽度（上标次数算半个），两边留白。 */
+const TERM_CHAR_W = 12;
+const TERM_PAD = 14;
+const SERIF = "'Times New Roman', 'Songti SC', serif";
 
 export const COLORS = {
   ink: "currentColor",
@@ -61,8 +66,30 @@ function maxDivisorWidth(layout: Layout): number {
   return w;
 }
 
+function termWidth(text: string): number {
+  return [...text].reduce((w, ch) => w + (/[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(ch) ? TERM_CHAR_W / 2 : TERM_CHAR_W), 0);
+}
+
+/** 有多项式的项时，各列按这一列最宽的项加宽。 */
+function termColumnWidths(layout: Layout): Map<number, number> {
+  const widths = new Map<number, number>();
+  for (const row of layout.rows) {
+    if (row.kind === "hline") continue;
+    for (const c of row.cells) {
+      if (c.content.kind !== "term") continue;
+      widths.set(c.col, Math.max(widths.get(c.col) ?? CELL_W, termWidth(c.content.text) + TERM_PAD));
+    }
+  }
+  return widths;
+}
+
+function hasTerms(layout: Layout): boolean {
+  return layout.rows.some((r) => r.kind !== "hline" && r.cells.some((c) => c.content.kind === "term"));
+}
+
 function buildGeometry(layout: Layout, style: StyleOptions): Geometry {
   const cols = columnsOf(layout);
+  const termWidths = termColumnWidths(layout);
   const intCols = cols.filter((c) => Number.isInteger(c));
   let maxCol = Math.max(...intCols, 0);
   const minCol = Math.min(...cols, 0);
@@ -75,12 +102,12 @@ function buildGeometry(layout: Layout, style: StyleOptions): Geometry {
     style.operatorPlacement === "far" && layout.rows.some((r) => r.kind === "digits" && r.operator !== undefined);
   const divisorW = maxDivisorWidth(layout);
   const gridLeft = PAD + (hasOperatorFar ? OP_W + 6 : 0) + (divisorW > 0 ? divisorW + BRACKET_W : 0);
-  const colWidth = (col: number): number => (Number.isInteger(col) ? CELL_W : POINT_W);
+  const colWidth = (col: number): number => (Number.isInteger(col) ? (termWidths.get(col) ?? CELL_W) : POINT_W);
   const colLeft = new Map<number, number>();
   let x = gridLeft;
   for (let c = maxCol; c >= minCol; c -= 1) {
     colLeft.set(c, x);
-    x += CELL_W;
+    x += colWidth(c);
     if (c === 0 && layout.hasDecimal) {
       colLeft.set(-0.5, x);
       x += POINT_W;
@@ -129,11 +156,15 @@ function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
   const parts: string[] = [];
   const marks = new Set(cell.marks);
   if (marks.has("err")) {
+    const half = cell.content.kind === "term" ? geo.colWidth(cell.col) / 2 - 3 : 9;
     parts.push(
-      `<rect class="cmn-err" x="${fmt(x - 9)}" y="${fmt(top + 4)}" width="18" height="${ROW_H - 6}" rx="3" fill="${COLORS.errBg}"/>`,
+      `<rect class="cmn-err" x="${fmt(x - half)}" y="${fmt(top + 4)}" width="${fmt(half * 2)}" height="${ROW_H - 6}" rx="3" fill="${COLORS.errBg}"/>`,
     );
   }
-  if (cell.content.kind === "digit") {
+  if (cell.content.kind === "term") {
+    const fill = cell.color ?? (marks.has("hong") ? COLORS.teach : COLORS.ink);
+    parts.push(text(x, baseline, mathTextSvg(cell.content.text), FONT_SIZE, fill, ` font-family="${SERIF}"`));
+  } else if (cell.content.kind === "digit") {
     const fill = cell.color ?? (marks.has("hong") ? COLORS.teach : COLORS.ink);
     parts.push(text(x, baseline, cell.content.text, FONT_SIZE, fill));
   } else if (cell.content.kind === "point") {
@@ -191,6 +222,9 @@ function drawDivisor(geo: Geometry, row: DigitRow, top: number): string {
 function drawDivisorText(row: DigitRow, centerX: number, baseline: number): string {
   const divisor = row.divisor ?? "";
   const k = row.divisorStruckPoint;
+  if (k === undefined && hasLetters(divisor)) {
+    return text(centerX, baseline, mathTextSvg(divisor), FONT_SIZE, COLORS.ink, ` font-family="${SERIF}"`);
+  }
   if (k === undefined) return text(centerX, baseline, divisor, FONT_SIZE, COLORS.ink);
   const left = centerX - divisorTextWidth(row) / 2;
   const chars = [...divisor].map((ch, i) => {
@@ -233,7 +267,8 @@ export function describe(layout: Layout): string {
     if (row.kind !== "digits") return [];
     const digits = row.cells
       .map((c) => {
-        const body = c.content.kind === "digit" ? c.content.text : c.content.kind === "point" ? "点" : "";
+        const body =
+          c.content.kind === "digit" || c.content.kind === "term" ? c.content.text : c.content.kind === "point" ? "点" : "";
         return c.point === "dot" || c.point === "hong" ? `${body}点` : body;
       })
       .join("");
@@ -296,7 +331,8 @@ export function renderLayout(
   });
   const height = y + PAD;
   const width = geo.gridRight + PAD + 4;
-  const guides = style.guides ? drawGuides(geo, contentTop, y) : "";
+  // 多项式竖式按次数对齐，数位虚线没有意义，不画
+  const guides = style.guides && !hasTerms(layout) ? drawGuides(geo, contentTop, y) : "";
   const label = describe(layout);
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-shushi" role="img" aria-label="${label}" style="${rootStyle(width, height, render.display ?? "inline-block")}" ` +

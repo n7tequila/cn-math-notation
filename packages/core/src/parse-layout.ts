@@ -1,21 +1,22 @@
 /**
  * 直写布局解析：`\shushi*{…}` 花括号里的原文 → Layout。
- * 语法见 docs/design/2026-11-25-直写布局语法试写.md（R1～R9；R10 的 & 分格属第三期，暂报错）。
+ * 语法见 docs/design/2026-11-25-直写布局语法试写.md（R1～R9）；R10 的 & 分格（多项式竖式）见 parse-term-row.ts。
  */
 import type { Cell, CellContent, CellMark, Layout, Operator, Row } from "./model.ts";
+import { hasTopLevelAmpersand, parseTermRow } from "./parse-term-row.ts";
 
 export class LayoutSyntaxError extends Error {
   override readonly name = "LayoutSyntaxError";
 }
 
-type Token =
+export type Token =
   | { readonly t: "cmd"; readonly name: string }
   | { readonly t: "open" }
   | { readonly t: "close" }
   | { readonly t: "newrow" }
   | { readonly t: "char"; readonly ch: string };
 
-const MARK_COMMANDS: Readonly<Record<string, CellMark>> = {
+export const MARK_COMMANDS: Readonly<Record<string, CellMark>> = {
   tui: "tui",
   borrow: "tui",
   err: "err",
@@ -177,7 +178,6 @@ class RowParser {
     if (ch === "~") return [cell({ kind: "blank" }, ctx)];
     const op = OPERATOR_CHARS[ch];
     if (op !== undefined) return this.operator(op, atRowStart);
-    if (ch === "&") throw new LayoutSyntaxError("& 分格（多字符的项）属第三期，暂不支持");
     throw new LayoutSyntaxError(`不认识的字符 "${ch}"`);
   }
 
@@ -272,6 +272,10 @@ export function parseLayout(source: string): Layout {
     }
     const rest = segment.slice(k);
     if (rest.length === 0) continue;
+    if (hasTopLevelAmpersand(rest)) {
+      rows.push(parseTermRow(rest));
+      continue;
+    }
     const parser = new RowParser(rest);
     const raw = parser.parse();
     rows.push(buildRow(raw, parser.flags));
