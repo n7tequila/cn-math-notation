@@ -22,27 +22,26 @@ describe("MathML 导出", () => {
     expect(shushiToMathML("74+88", undefined, undefined, { display: "inline" })).toContain('display="inline"');
   });
 
-  test("加法：运算符在行首、进位挂在第二个加数上（location=s）、横线 msline", () => {
+  test("加法（课本写法）：坐在横线上的进位是一行红色小号数字，夹在第二个加数与横线之间", () => {
     const m = shushiToMathML("74+88", undefined, undefined, { wrap: false });
     expect(m).toBe(
       '<mstack stackalign="right">' +
         "<msrow><mn>7</mn><mn>4</mn></msrow>" +
-        '<mscarries crossout="none" scriptsizemultiplier="0.6">' +
-        '<mscarry location="s" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>' +
-        '<mscarry location="s" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>' +
-        "<mrow/></mscarries>" +
         "<msrow><mo>+</mo><mn>8</mn><mn>8</mn></msrow>" +
+        '<msrow><mn mathsize="small" mathcolor="#d4402b">1</mn><mn mathsize="small" mathcolor="#d4402b">1</mn><mrow/></msrow>' +
         "<msline/>" +
         "<msrow><mn>1</mn><mn>6</mn><mn>2</mn></msrow>" +
         "</mstack>",
     );
   });
 
-  test("carryAt=sw 换算成目标列的右下（se）；carries=above 一律写上方（n）", () => {
-    expect(shushiToMathML("74+88", "carryAt=sw")).toContain('location="se"');
+  test("不用 s / se / ne 方位（polyfill 只正确支持 n）；carries=above 时进位挂在上一行、location=n", () => {
+    for (const opts of [undefined, "carryAt=sw", "multiCarry, carryAt=sw"]) {
+      expect(shushiToMathML("538×26", opts)).not.toMatch(/location="(s|se|ne)"/);
+    }
     const above = shushiToMathML("74+88", undefined, undefined, { carries: "above" });
-    expect(above).toContain('location="n"');
-    expect(above).not.toContain('location="s"');
+    expect(above).toContain('<mscarry location="n" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>');
+    expect(above).not.toContain('mathsize="small"');
   });
 
   test("减法：退位点是 location=n 的“·”，挂在被减数上", () => {

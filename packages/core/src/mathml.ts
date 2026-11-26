@@ -4,8 +4,8 @@
  * - 列对齐：每行从自己的最高位写到全竖式的最低列，缺的格子补空 <mrow/>，统一 stackalign="right"，
  *   不依赖渲染器对小数点对齐的实现；小数点占一列（与规范一致）。
  * - 进位、退位点：合并成该行前面的一个 <mscarries>，每格用 <mscarry location=…> 指定方位。
- *   进位坐在横线上 → 挂在上一行，location 为 s（carryAt=s）或 se（carryAt=sw：目标列的右下＝产生进位那一位的左下）；
- *   进位写在下一行上方 → 挂在下一行，location 为 n 或 ne；退位点 → location n，内容“·”。
+ *   进位写在下一行上方 → 挂在下一行，location n；退位点 → location n，内容“·”。
+ *   进位坐在横线上（课本写法）→ 单独一行红色小号数字（见 sittingCarryRow）；carries=above 时改为挂在上一行、location n。
  * - 补 0 → menclose box；划掉 → menclose updiagonalstrike；错误 → mathbackground；着色、红色强调 → mathcolor。
  * - 数位虚线在 MathML 里没有对应写法，导出时省略。
  */
@@ -114,10 +114,17 @@ function mscarries(ann: ReadonlyMap<number, Annotation>, cols: readonly number[]
 }
 
 /** 把进位行、退位点归到对应的数字行上，得到“数字行 → 前置进位”的表。 */
+/** 课本写法下，坐在横线上的进位行不进 mscarries，而是单独成一行小号数字（见 sittingCarryRow）。 */
+function sitsOnRule(layout: Layout, i: number): boolean {
+  const next = layout.rows[i + 1];
+  return next === undefined || next.kind === "hline";
+}
+
 function annotationsByRow(layout: Layout, style: StyleOptions, mode: "textbook" | "above"): Map<number, Map<number, Annotation>> {
   const textbook = mode === "textbook";
-  const below = textbook ? (style.carryAt === "sw" ? "se" : "s") : "n";
-  const above = textbook && style.carryAt === "sw" ? "ne" : "n";
+  // 一律用 n：W3C polyfill 只正确支持 n，s / se / ne 都会错位（2026-11-26 实测）；左下写法只是同列内的细微偏移，MathML 里不区分
+  const above = "n";
+  void style;
   const result = new Map<number, Map<number, Annotation>>();
   const add = (rowIndex: number, ann: Map<number, Annotation>) => {
     const cur = result.get(rowIndex) ?? new Map<number, Annotation>();
@@ -128,11 +135,12 @@ function annotationsByRow(layout: Layout, style: StyleOptions, mode: "textbook" 
     if (row.kind === "digits") add(i, borrowAnnotations(row));
     if (row.kind !== "carry") return;
     const next = layout.rows[i + 1];
-    if (next?.kind === "hline" || next === undefined) {
-      // 坐在横线上：挂在上一行数字行
+    if (sitsOnRule(layout, i)) {
+      if (textbook) return; // 课本写法：单独成一行小号数字，不进 mscarries
+      // 写上方：挂在进到的那一行（上一行数字行）
       for (let j = i - 1; j >= 0; j -= 1) {
         if (layout.rows[j]!.kind === "digits") {
-          add(j, carryAnnotations(row, below));
+          add(j, carryAnnotations(row, "n"));
           break;
         }
       }
@@ -148,6 +156,25 @@ function annotationsByRow(layout: Layout, style: StyleOptions, mode: "textbook" 
   return result;
 }
 
+/**
+ * 课本写法里坐在横线上的进位：一行红色小号数字，夹在上一行与横线之间。
+ * 不用 mscarries location="s"：W3C polyfill 对 s / se 方位的渲染有误（横线被打断、整行错位，2026-11-26 实测）。
+ * 代价是 MathML 里不再标明“这是进位”，但所有渲染器都按普通行排，位置可靠。
+ */
+function sittingCarryRow(row: CarryRow, cols: readonly number[]): string {
+  const byCol = new Map(row.cells.map((c) => [c.col, c]));
+  const top = Math.max(...row.cells.map((c) => c.col));
+  const cells = cols
+    .filter((c) => c <= top)
+    .map((c) => {
+      const cell = byCol.get(c);
+      if (cell === undefined || cell.content.kind !== "digit") return EMPTY;
+      const color = cell.color ?? COLORS.teach;
+      return `<mn mathsize="small" mathcolor="${escapeXml(color)}">${cell.content.text}</mn>`;
+    });
+  return `<msrow>${cells.join("")}</msrow>`;
+}
+
 function digitRowElement(row: DigitRow, cols: readonly number[]): string {
   const cells = rowCells(row.cells, cols);
   const op = row.operator === undefined ? "" : `<mo>${OPERATOR_TEXT[row.operator]}</mo>`;
@@ -160,7 +187,10 @@ function stackBody(layout: Layout, style: StyleOptions, skip: ReadonlySet<number
   const parts: string[] = [];
   layout.rows.forEach((row, i) => {
     if (skip.has(i)) return;
-    if (row.kind === "carry") return; // 已并入相邻数字行的 mscarries
+    if (row.kind === "carry") {
+      if (mode === "textbook" && sitsOnRule(layout, i)) parts.push(sittingCarryRow(row, cols));
+      return; // 其余进位已并入相邻数字行的 mscarries
+    }
     if (row.kind === "hline") {
       parts.push("<msline/>");
       return;
