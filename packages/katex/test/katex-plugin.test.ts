@@ -204,3 +204,14 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect(katex.renderToString(EX1)).toContain("cmn-shushi");
   });
 });
+
+describe("命令名不与 KaTeX 0.19.1 自带的命令冲突", () => {
+  // 格子标记写在 raw 参数里由本库解析，但 KaTeX 会先展开里面的宏：KaTeX 自带同名宏就会被替换掉。
+  // 注册本库后它们在 KaTeX 里仍然是未定义命令，说明 KaTeX 没有占用这些名字。
+  const MARKUP = ["jin", "carry", "tui", "borrow", "bu", "pad", "hong", "hl", "err", "hua", "strike", "shang", "chu"];
+  for (const name of MARKUP) {
+    test(`\\${name}`, () => {
+      expect(() => katex.renderToString(`\\${name}{1}`, { throwOnError: true })).toThrow("Undefined control sequence");
+    });
+  }
+});

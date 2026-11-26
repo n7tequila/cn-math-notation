@@ -45,3 +45,16 @@ describe("texToSvg：宏包与 Typora 的 MathJax 一致", () => {
     await expect(texToSvg(String.raw`\nosuchcommand`)).rejects.toThrow("Undefined control sequence");
   });
 });
+
+describe("本库命令名不与 MathJax 的宏包冲突（全部宏包都已加载）", () => {
+  const NAMES = [
+    "shushi", "vertical", "dengshi", "stepeq", "duanchu", "shortdiv",
+    "shuzhuang", "factortree", "shizi", "crossmul", "zonghe", "synthdiv",
+    "jin", "carry", "tui", "borrow", "bu", "pad", "hong", "hl", "err", "hua", "strike", "shang", "chu",
+  ];
+  for (const name of NAMES) {
+    test(`\\${name}`, async () => {
+      await expect(texToSvg(`\\${name}{1}`)).rejects.toThrow("Undefined control sequence");
+    });
+  }
+});
