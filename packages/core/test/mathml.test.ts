@@ -22,26 +22,38 @@ describe("MathML 导出", () => {
     expect(shushiToMathML("74+88", undefined, undefined, { display: "inline" })).toContain('display="inline"');
   });
 
-  test("加法（课本写法）：坐在横线上的进位是一行红色小号数字，夹在第二个加数与横线之间", () => {
+  test("加法（课本写法）：进位挂在第二个加数上（location=s），并用透明占位铺满整行（含运算符列）", () => {
     const m = shushiToMathML("74+88", undefined, undefined, { wrap: false });
+    const phantom = '<mscarry location="s" crossout="none"><mn mathcolor="transparent" aria-hidden="true">0</mn></mscarry>';
     expect(m).toBe(
       '<mstack stackalign="right">' +
         "<msrow><mn>7</mn><mn>4</mn></msrow>" +
+        '<mscarries crossout="none" scriptsizemultiplier="0.6">' +
+        '<mscarry location="s" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>' +
+        '<mscarry location="s" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>' +
+        phantom +
+        "</mscarries>" +
         "<msrow><mo>+</mo><mn>8</mn><mn>8</mn></msrow>" +
-        '<msrow><mn mathsize="small" mathcolor="#d4402b">1</mn><mn mathsize="small" mathcolor="#d4402b">1</mn><mrow/></msrow>' +
         "<msline/>" +
         "<msrow><mn>1</mn><mn>6</mn><mn>2</mn></msrow>" +
         "</mstack>",
     );
   });
 
-  test("不用 s / se / ne 方位（polyfill 只正确支持 n）；carries=above 时进位挂在上一行、location=n", () => {
+  test("占位铺满整个竖式宽度：329×4 的积比“×4”宽，mscarries 也要覆盖到最左一列", () => {
+    const m = shushiToMathML("329×4", undefined, undefined, { wrap: false });
+    const carries = /<mscarries[^>]*>([\s\S]*?)<\/mscarries>/.exec(m)![1]!;
+    expect((carries.match(/<mscarry /g) ?? []).length).toBe(4); // 千、百、十、个四列
+  });
+
+  test("只用 s 与 n 两种方位（polyfill 对 se / ne / sw 渲染有误）；carries=above 时进位挂在上一行、location=n、不铺占位", () => {
     for (const opts of [undefined, "carryAt=sw", "multiCarry, carryAt=sw"]) {
-      expect(shushiToMathML("538×26", opts)).not.toMatch(/location="(s|se|ne)"/);
+      expect(shushiToMathML("538×26", opts)).not.toMatch(/location="(se|ne|sw|nw)"/);
     }
     const above = shushiToMathML("74+88", undefined, undefined, { carries: "above" });
     expect(above).toContain('<mscarry location="n" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>');
-    expect(above).not.toContain('mathsize="small"');
+    expect(above).not.toContain("transparent");
+    expect(above).not.toContain('location="s"');
   });
 
   test("减法：退位点是 location=n 的“·”，挂在被减数上", () => {

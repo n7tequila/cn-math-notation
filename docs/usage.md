@@ -353,7 +353,7 @@ shushiToMathML("74+88", "carryAt=sw", undefined, { carries: "above", wrap: false
 | 加减乘竖式 | `<mstack stackalign="right">`，每行 `<msrow>`，运算符是行首的 `<mo>` |
 | 除法 | `<mlongdiv longdivstyle="lefttop">`（除数在左、商在上） |
 | 横线 | `<msline/>` |
-| 进位、退位点 | 坐在横线上的进位（课本写法）：一行红色小号数字 `<mn mathsize="small">`，夹在上一行与横线之间；写在下一行上方的进位、退位点：该行前面的 `<mscarries>`，`location="n"`，退位点内容是“·” |
+| 进位、退位点 | 该行前面的 `<mscarries>`。坐在横线上的进位（课本写法）用 `location="s"` 挂在上一行，没有进位的格子放透明占位（`aria-hidden`）；写在下一行上方的进位、退位点用 `location="n"`，退位点内容是“·” |
 | 补的 0 / 划掉的 0 | `<menclose notation="box">` / `<menclose notation="updiagonalstrike">` |
 | 错误位、着色 | `mathbackground` / `mathcolor` |
 | 数位虚线 | 无对应写法，省略 |
@@ -365,9 +365,9 @@ shushiToMathML("74+88", "carryAt=sw", undefined, { carries: "above", wrap: false
 |---|---|---|---|
 | `wrap` | `true` / `false` | `true` | 外面包不包 `<math>` |
 | `display` | `block` / `inline` | `block` | `<math display>` |
-| `carries` | `textbook` / `above` | `textbook` | 进位写法。`textbook`：按课本，坐在横线上的进位单独一行小号数字；`above`：一律用 `mscarries`、写在进到的那一行上方（MathML 的默认写法，保留“这是进位”的语义）。 |
+| `carries` | `textbook` / `above` | `textbook` | 进位写法。`textbook`：按课本，坐在横线上的进位画在上一行下方（`location="s"`）；`above`：一律写在进到的那一行上方（`location="n"`，MathML 的默认写法）。 |
 
-**兼容性**：主流浏览器不原生渲染 `mstack` / `mlongdiv`（它们不在 MathML Core 里）。用 W3C 官方 polyfill（elem-math）实测，两种写法的 30 个例子位置都正确。注意两点：polyfill 只正确支持 `location="n"`（`s`、`se`、`ne` 会打断横线或错位），所以本库只用 `n`，左下进位写法在 MathML 里不区分；polyfill 会忽略 `mn` 上的颜色和字号，进位在它那里显示为普通黑字，其他支持 `mathcolor` / `mathsize` 的工具会正常显示。运行 `bun run mathml:preview` 可生成对照页 `out/mathml-preview.html`。
+**兼容性**：主流浏览器不原生渲染 `mstack` / `mlongdiv`（它们不在 MathML Core 里）。用 W3C 官方 polyfill（elem-math）实测，两种写法的 30 个例子位置都正确。为适配 polyfill 做了三处处理：只用 `s` 和 `n` 两种方位（`se`、`ne` 会错位，左下进位写法在 MathML 里不区分）；坐在横线上的进位铺满整行透明占位（polyfill 用每格的下边框拼横线，带进位的格子会变高，不铺满横线就断成几截）；占位用与真进位同结构的透明数字（`mphantom` 会矮约 1px）。处理后横线下各格高度差 < 0.5px；进位下沿略压横线，是 polyfill 的进位样式（60% 字号、90% 行高）所致。运行 `bun run mathml:preview` 可生成对照页 `out/mathml-preview.html`。
 
 在 KaTeX 里，竖式输出中隐藏的 MathML 默认就是上面的 `mstack` 结构（供复制、辅助技术使用）；`register(katex, { mathml: "label" })` 改为只放朗读文字，`register(katex, { mathmlCarries: "above" })` 让进位写在上方。试写页每个竖式下方有“复制 MathML”按钮。
 

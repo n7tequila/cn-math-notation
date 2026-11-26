@@ -132,7 +132,7 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
 
   test("隐藏的 MathML 是真正的竖式结构：mstack / mscarries / mlongdiv", () => {
     const add = katex.renderToString(String.raw`\shushi{74+88}`);
-    expect(add).toContain('<mn mathsize="small" mathcolor="#d4402b">1</mn>');
+    expect(add).toContain('<mscarry location="s" crossout="none"><mn mathcolor="#d4402b">1</mn></mscarry>');
     expect(add).toContain("<msline/>");
     expect(katex.renderToString(String.raw`\shushi{71\div4}`)).toContain('<mlongdiv longdivstyle="lefttop"');
   });
