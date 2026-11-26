@@ -4,7 +4,7 @@
  *
  * MathJax 是按需加载的，改公式设置时还会重新加载，所以定时检查，发现没包过的就包上并重画已有公式。
  */
-import { mentionsCommand } from "./command.ts";
+import { mentionsFormulaCommand } from "@cn-math-notation/core";
 import { createElementFactory } from "./elements.ts";
 import { isPatched, patchMathJax } from "./mathjax-patch.ts";
 import { currentMathJax, LOG_PREFIX, pluginBase, refreshAllMath } from "./typora-env.ts";
@@ -34,7 +34,7 @@ export default class CnMathNotationPlugin extends pluginBase() {
       return;
     }
     this.restore = patchMathJax(mj, createElementFactory(document));
-    if (!refreshAllMath(mentionsCommand)) {
+    if (!refreshAllMath(mentionsFormulaCommand)) {
       console.warn(`${LOG_PREFIX} 没有找到 Typora 的公式刷新入口（可能是 Typora 升级后内部接口变了）；已打开的公式要编辑一下才会重画。`);
     }
   }

@@ -6,7 +6,7 @@
  * Typora 改公式设置时会重新加载 MathJax，入口函数随之换新；用函数上的标记判断是否已经包过。
  */
 import type { RenderedSvg } from "@cn-math-notation/core";
-import { translate, translateMathML } from "./translate.ts";
+import { translateFormula, translateFormulaMathML } from "@cn-math-notation/core";
 
 export interface MathJaxOptions {
   readonly display?: boolean;
@@ -64,7 +64,7 @@ export function patchMathJax(mj: MathJaxLike, factory: ElementFactory): () => vo
   if (isPatched(mj)) return () => {};
 
   const toElement = (tex: string, options: MathJaxOptions | undefined): Element | { readonly tex: string } | undefined => {
-    const r = translate(tex);
+    const r = translateFormula(tex);
     switch (r.kind) {
       case "pass":
         return undefined;
@@ -88,7 +88,7 @@ export function patchMathJax(mj: MathJaxLike, factory: ElementFactory): () => vo
     return "tex" in r ? tex2svgPromise(r.tex, options) : r;
   });
   const patchedMml = mark<Tex2Mml>((tex, options) => {
-    const r = translateMathML(tex);
+    const r = translateFormulaMathML(tex);
     switch (r.kind) {
       case "pass":
         return tex2mml(tex, options);

@@ -7,14 +7,15 @@
   ],
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc -p packages/core && tsc -p packages/katex && tsc -p packages/typora && tsc -p packages/playground",
+    "typecheck": "tsc -p packages/core && tsc -p packages/katex && tsc -p packages/typora && tsc -p packages/server && tsc -p packages/playground",
     "check": "bun run build && bun run typecheck && bun test",
     "demo": "bun run scripts/demo.ts",
     "playground": "bun run build && cd packages/playground && bun --port=5177 index.html",
     "build:playground": "bun run build && cd packages/playground && bun build index.html --outdir=../../out/playground",
     "docs:images": "bun run scripts/build-doc-images.ts",
     "build": "cd packages/core && bun run build && cd ../katex && bun run build",
-    "mathml:preview": "bun run scripts/mathml-preview.ts"
+    "mathml:preview": "bun run scripts/mathml-preview.ts",
+    "server": "cd packages/server && bun run start"
   },
   "devDependencies": {
     "typescript": "~6.0.0",

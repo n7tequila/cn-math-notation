@@ -6,9 +6,9 @@
  */
 
 /** 命令族（拼音主名）。 */
-export type Family = "shushi" | "dengshi" | "duanchu" | "shuzhuang" | "shizi" | "zonghe";
+export type FormulaFamily = "shushi" | "dengshi" | "duanchu" | "shuzhuang" | "shizi" | "zonghe";
 
-const NAME_TO_FAMILY: Readonly<Record<string, Family>> = {
+const NAME_TO_FAMILY: Readonly<Record<string, FormulaFamily>> = {
   shushi: "shushi",
   vertical: "shushi",
   dengshi: "dengshi",
@@ -29,11 +29,11 @@ const ANY_COMMAND = new RegExp(String.raw`\\(?:${NAMES})(?![a-zA-Z])`);
 /** 公式开头是本库命令。 */
 const LEADING_COMMAND = new RegExp(String.raw`^\\(${NAMES})(?![a-zA-Z])(\*?)`);
 
-export type ParsedCommand =
+export type ParsedFormula =
   | { readonly kind: "pass" }
   | {
       readonly kind: "command";
-      readonly family: Family;
+      readonly family: FormulaFamily;
       readonly starred: boolean;
       readonly options: string | undefined;
       readonly body: string;
@@ -41,13 +41,13 @@ export type ParsedCommand =
   | { readonly kind: "error"; readonly message: string };
 
 /** 公式里有没有本库命令（不管写得对不对）。 */
-export function mentionsCommand(tex: string): boolean {
+export function mentionsFormulaCommand(tex: string): boolean {
   return ANY_COMMAND.test(tex);
 }
 
 const MIXED_MESSAGE ="本库命令要单独写成一个公式，不能和其他公式写在一起";
 
-export function parseCommand(tex: string): ParsedCommand {
+export function parseFormulaCommand(tex: string): ParsedFormula {
   const source = tex.trim();
   if (!ANY_COMMAND.test(source)) return { kind: "pass" };
 

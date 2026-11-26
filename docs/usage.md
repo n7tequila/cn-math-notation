@@ -587,6 +587,23 @@ $$\shushi{403-167}$$
 
 行内公式 `$\shushi{74+88}$` 也可以。和普通公式写在同一个公式里（如 `74+88=162 \quad \shushi{…}`）暂不支持，会提示“本库命令要单独写成一个公式”。
 
-### Obsidian、GitHub
+### Obsidian、GitHub、微信、Word 等
 
-这些工具自带公式引擎，无法注册新命令，`\shushi*` 会显示为错误。可以先用图片（例如本仓库 `docs/images/` 里的图）。
+这些工具自带公式引擎或不支持公式，无法注册新命令，`\shushi*` 会显示为错误。可以用[出图服务](../packages/server/README.md)生成图片：
+
+```markdown
+![403−167](http://127.0.0.1:5178/render.svg?tex=%5Cshushi%7B403-167%7D)
+```
+
+### 给其他公式引擎写插件
+
+不能注册新命令的公式引擎（如 MathJax），可以在交给引擎之前先用 core 判断整个公式是不是本库命令：
+
+```ts
+import { translateFormula } from "@cn-math-notation/core";
+
+const r = translateFormula(String.raw`\shushi{403-167}`);
+// r.kind："svg"（本库画好的 r.rendered）、"tex"（递等式转成的 TeX，交给引擎）、"pass"（普通公式）、"error"（r.message）
+```
+
+本库命令要单独写成一个公式；和其他公式混写时返回 `error`。`translateFormulaMathML` 用于“复制为 MathML”。Typora 插件和出图服务都用这一套。

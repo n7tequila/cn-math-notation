@@ -2,41 +2,31 @@
  * 公式文本 → 该怎么渲染：本库画 SVG / 递等式转成 TeX 再交给 MathJax / 原样放行 / 报错。
  * 不碰 DOM，便于测试。
  */
-import {
-  buildDengshi,
-  buildDengshiLayout,
-  ExpressionError,
-  LayoutSyntaxError,
-  OptionError,
-  renderDuanchu,
-  renderDuanchuLayout,
-  renderShizi,
-  renderShiziLayout,
-  renderShushi,
-  renderShushiLayout,
-  renderShuzhuang,
-  renderShuzhuangLayout,
-  renderZonghe,
-  renderZongheLayout,
-  shushiLayoutToMathML,
-  shushiToMathML,
-  type RenderedSvg,
-} from "@cn-math-notation/core";
-import { parseCommand, type Family } from "./command.ts";
+import { buildDengshi, buildDengshiLayout } from "../dengshi/index.ts";
+import { ExpressionError } from "../semantic/index.ts";
+import { LayoutSyntaxError } from "../parse-layout.ts";
+import { OptionError } from "../options.ts";
+import type { RenderedSvg } from "../render-svg.ts";
+import { renderShushi, renderShushiLayout, shushiLayoutToMathML, shushiToMathML } from "../shushi.ts";
+import { renderDuanchu, renderDuanchuLayout } from "../shortdiv/index.ts";
+import { renderShuzhuang, renderShuzhuangLayout } from "../factortree/index.ts";
+import { renderShizi, renderShiziLayout } from "../crossmul/index.ts";
+import { renderZonghe, renderZongheLayout } from "../synthdiv/index.ts";
+import { parseFormulaCommand, type FormulaFamily } from "./command.ts";
 
-export type Translation =
+export type FormulaTranslation =
   | { readonly kind: "pass" }
   | { readonly kind: "svg"; readonly rendered: RenderedSvg }
   | { readonly kind: "tex"; readonly tex: string }
   | { readonly kind: "error"; readonly message: string };
 
-export type MathMLTranslation =
+export type FormulaMathMLTranslation =
   | { readonly kind: "pass" }
   | { readonly kind: "mathml"; readonly mathml: string }
   | { readonly kind: "tex"; readonly tex: string }
   | { readonly kind: "error"; readonly message: string };
 
-type SvgFamily = Exclude<Family, "dengshi">;
+type SvgFamily = Exclude<FormulaFamily, "dengshi">;
 type Renderer = (body: string, options: string | undefined) => RenderedSvg;
 
 /** [语义式, 直写] */
@@ -62,8 +52,8 @@ function guarded<T>(label: string, fn: () => T): T | { readonly kind: "error"; r
   }
 }
 
-export function translate(tex: string): Translation {
-  const cmd = parseCommand(tex);
+export function translateFormula(tex: string): FormulaTranslation {
+  const cmd = parseFormulaCommand(tex);
   if (cmd.kind !== "command") return cmd;
   const label = `\\${cmd.family}${cmd.starred ? "*" : ""}`;
   if (cmd.family === "dengshi") {
@@ -82,15 +72,15 @@ function escapeXml(s: string): string {
  * 复制为 MathML 时用：竖式给真正的 mstack / mlongdiv；
  * 短除法、树状图、十字相乘、综合除法 MathML 表达不了，只给朗读文字。
  */
-export function translateMathML(tex: string): MathMLTranslation {
-  const cmd = parseCommand(tex);
+export function translateFormulaMathML(tex: string): FormulaMathMLTranslation {
+  const cmd = parseFormulaCommand(tex);
   if (cmd.kind !== "command") return cmd;
   if (cmd.family === "shushi") {
     const label = `\\shushi${cmd.starred ? "*" : ""}`;
     const toMathML = cmd.starred ? shushiLayoutToMathML : shushiToMathML;
     return guarded(label, () => ({ kind: "mathml", mathml: toMathML(cmd.body, cmd.options) }) as const);
   }
-  const result = translate(tex);
+  const result = translateFormula(tex);
   if (result.kind !== "svg") return result;
   const text = escapeXml(result.rendered.label);
   return {

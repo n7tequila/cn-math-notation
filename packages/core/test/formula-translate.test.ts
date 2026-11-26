@@ -1,14 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { buildDengshi } from "@cn-math-notation/core";
-import { translate, translateMathML } from "../src/translate.ts";
+import { buildDengshi, translateFormula, translateFormulaMathML } from "../src/index.ts";
 
-describe("translate：公式文本 → 本库 SVG / 递等式 TeX / 放行 / 报错", () => {
+describe("translateFormula：公式文本 → 本库 SVG / 递等式 TeX / 放行 / 报错", () => {
   test("普通公式放行", () => {
-    expect(translate("x^2")).toEqual({ kind: "pass" });
+    expect(translateFormula("x^2")).toEqual({ kind: "pass" });
   });
 
   test("竖式语义式画成 SVG，带朗读文字", () => {
-    const r = translate(String.raw`\shushi{74+88}`);
+    const r = translateFormula(String.raw`\shushi{74+88}`);
     expect(r.kind).toBe("svg");
     if (r.kind === "svg") {
       expect(r.rendered.svg.startsWith("<svg")).toBe(true);
@@ -27,34 +26,34 @@ describe("translate：公式文本 → 本库 SVG / 递等式 TeX / 放行 / 报
       String.raw`\shizi*{x & +2 \\ x & +3}`,
       String.raw`\zonghe{(x^2+3x+2)\div(x+1)}`,
     ];
-    for (const tex of cases) expect(translate(tex).kind).toBe("svg");
+    for (const tex of cases) expect(translateFormula(tex).kind).toBe("svg");
   });
 
   test("递等式转成 TeX 交给 MathJax", () => {
-    const r = translate(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
+    const r = translateFormula(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
     expect(r).toEqual({ kind: "tex", tex: buildDengshi(String.raw`2\times3\times4+1`, "steps=1") });
-    expect(translate(String.raw`\stepeq*{1+1 \\ 2}`).kind).toBe("tex");
+    expect(translateFormula(String.raw`\stepeq*{1+1 \\ 2}`).kind).toBe("tex");
   });
 
   test("写法错误给出带命令名的报错", () => {
-    const r = translate(String.raw`\shushi{7+}`);
+    const r = translateFormula(String.raw`\shushi{7+}`);
     expect(r.kind).toBe("error");
     if (r.kind === "error") expect(r.message.startsWith("\\shushi：")).toBe(true);
-    const star = translate(String.raw`\shushi*{7 + 4}`);
+    const star = translateFormula(String.raw`\shushi*{7 + 4}`);
     if (star.kind === "error") expect(star.message.startsWith("\\shushi*：")).toBe(true);
     expect(star.kind).toBe("error");
-    expect(translate(String.raw`\shushi[nope]{74+88}`).kind).toBe("error");
-    expect(translate(String.raw`\dengshi{7-9}`).kind).toBe("error");
+    expect(translateFormula(String.raw`\shushi[nope]{74+88}`).kind).toBe("error");
+    expect(translateFormula(String.raw`\dengshi{7-9}`).kind).toBe("error");
   });
 
   test("混写报错原样传出", () => {
-    expect(translate(String.raw`x+\shushi{1+1}`).kind).toBe("error");
+    expect(translateFormula(String.raw`x+\shushi{1+1}`).kind).toBe("error");
   });
 });
 
-describe("translateMathML：复制为 MathML 时用", () => {
+describe("translateFormulaMathML：复制为 MathML 时用", () => {
   test("竖式给 mstack，外面包 <math>", () => {
-    const r = translateMathML(String.raw`\shushi{74+88}`);
+    const r = translateFormulaMathML(String.raw`\shushi{74+88}`);
     expect(r.kind).toBe("mathml");
     if (r.kind === "mathml") {
       expect(r.mathml).toContain("<math");
@@ -63,7 +62,7 @@ describe("translateMathML：复制为 MathML 时用", () => {
   });
 
   test("其他画成 SVG 的写法只给朗读文字", () => {
-    const r = translateMathML(String.raw`\duanchu{36}`);
+    const r = translateFormulaMathML(String.raw`\duanchu{36}`);
     expect(r.kind).toBe("mathml");
     if (r.kind === "mathml") {
       expect(r.mathml).toContain("<mtext>");
@@ -72,13 +71,13 @@ describe("translateMathML：复制为 MathML 时用", () => {
   });
 
   test("递等式、普通公式、报错照常", () => {
-    expect(translateMathML(String.raw`\dengshi{1+1}`).kind).toBe("tex");
-    expect(translateMathML("x").kind).toBe("pass");
-    expect(translateMathML(String.raw`\shushi{7+}`).kind).toBe("error");
+    expect(translateFormulaMathML(String.raw`\dengshi{1+1}`).kind).toBe("tex");
+    expect(translateFormulaMathML("x").kind).toBe("pass");
+    expect(translateFormulaMathML(String.raw`\shushi{7+}`).kind).toBe("error");
   });
 
   test("朗读文字里的特殊字符要转义", () => {
-    const r = translateMathML(String.raw`\shuzhuang{12}`);
+    const r = translateFormulaMathML(String.raw`\shuzhuang{12}`);
     if (r.kind === "mathml") expect(r.mathml).not.toMatch(/<mtext>[^<]*[<>&][^<]*<\/mtext>/);
   });
 });

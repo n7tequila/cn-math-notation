@@ -32,6 +32,15 @@ dengshiSteps("25×(40+4)"); // ["25\\times (40+4)", "25\\times 44", "1100"]
 buildDengshi("25×(40+4)"); // "\\begin{aligned}&25\\times (40+4)\\\\[6pt]={}&…\\end{aligned}"
 ```
 
+给不能注册新命令的公式引擎（如 MathJax）写插件时，先判断整个公式是不是本库命令：
+
+```ts
+import { translateFormula } from "@cn-math-notation/core";
+
+const r = translateFormula(String.raw`\shushi{403-167}`);
+// r.kind："svg"（r.rendered）、"tex"（递等式转成的 TeX）、"pass"（普通公式）、"error"（r.message）
+```
+
 在网页里配合 KaTeX 使用，请用 [@cn-math-notation/katex](https://www.npmjs.com/package/@cn-math-notation/katex)。
 
 完整写法、样式选项与例子见 [GitHub](https://github.com/n7tequila/cn-math-notation) 与[使用说明](https://github.com/n7tequila/cn-math-notation/blob/main/docs/usage.md)。
