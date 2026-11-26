@@ -133,6 +133,16 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
     expect(() => katex.renderToString(String.raw`\shuzhuang*{36 = 4}`)).toThrow(/因数/);
   });
 
+  test("十字相乘 \\shizi / \\shizi*：画出交叉线与验算行，MathML 侧给朗读文字；写错报错", () => {
+    const html = katex.renderToString(String.raw`\shizi[result]{x^2+5x+6}`);
+    expect(html).toContain("cmn-shizi");
+    expect(html).toContain("<mtext>十字相乘：");
+    expect(html).toContain("(x + 2)(x + 3)");
+    expect(katex.renderToString(String.raw`\crossmul*{x & +2 \\ x & +3}`)).toContain("cmn-cross-line");
+    expect(() => katex.renderToString(String.raw`\shizi{x^2+x+1}`)).toThrow(/整数范围内/);
+    expect(() => katex.renderToString(String.raw`\shizi*{x & +2}`)).toThrow(/两行/);
+  });
+
   test("递等式 [steps=1]：只写前几步，后面留空等号行；选项写错报错", () => {
     const html = katex.renderToString(String.raw`\dengshi[steps=1]{2\times3\times4+1}`);
     expect(html).toContain("underline");

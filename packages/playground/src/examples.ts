@@ -114,6 +114,14 @@ export const SHUZHUANG_EXAMPLES: readonly DengshiExample[] = [
   { id: "tree-err", name: "树状图直写（标出写错的数）", tex: String.raw`\shuzhuang*{36 = 4 \times \err{8}}` },
 ];
 
+/** 十字相乘例子：整段 TeX。 */
+export const SHIZI_EXAMPLES: readonly DengshiExample[] = [
+  { id: "cross-basic", name: "十字相乘 x²+5x+6", tex: String.raw`\shizi{x^2+5x+6}` },
+  { id: "cross-a", name: "十字相乘 6x²−7x−3（写分解结果）", tex: String.raw`\shizi[result]{6x^2-7x-3}` },
+  { id: "cross-two", name: "十字相乘 两个字母 x²+5xy+6y²", tex: String.raw`\shizi[result]{x^2+5xy+6y^2}` },
+  { id: "cross-layout", name: "十字相乘直写（标出写错的角）", tex: String.raw`\shizi*{x & +2 \\ x & \err{-3} \\ 3x-2x=x}` },
+];
+
 /** 递等式例子：整段 TeX。语义式只写算式；直写用 \\ 分行。 */
 export interface DengshiExample {
   readonly id: string;

@@ -4,7 +4,7 @@
  * 运行：bun run docs:images
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { renderDuanchu, renderDuanchuLayout, renderShuzhuang, renderShuzhuangLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
+import { renderDuanchu, renderDuanchuLayout, renderShizi, renderShuzhuang, renderShuzhuangLayout, renderShushi, renderShushiLayout, type RenderedSvg } from "../packages/core/src/index.ts";
 import { EXAMPLES, SEMANTIC_EXAMPLES, type Example } from "../packages/playground/src/examples.ts";
 
 const INK = "#1f2a44";
@@ -47,5 +47,11 @@ const SHUZHUANG: readonly [string, string, string | undefined, boolean][] = [
 for (const [id, src, opts, layout] of SHUZHUANG) {
   write(id, layout ? renderShuzhuangLayout(src, opts) : renderShuzhuang(src, opts));
 }
-const total = EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length + SHUZHUANG.length;
+/** 十字相乘演示图：[id, 写法, 选项]。 */
+const SHIZI: readonly [string, string, string | undefined][] = [
+  ["cross-basic", "x^2+5x+6", undefined],
+  ["cross-a", "6x^2-7x-3", "result"],
+];
+for (const [id, src, opts] of SHIZI) write(id, renderShizi(src, opts));
+const total = EXAMPLES.length + VARIANTS.length + SEMANTIC_EXAMPLES.length + DUANCHU.length + SHUZHUANG.length + SHIZI.length;
 console.log(`写出 ${total} 张图到 ${OUT}/`);
