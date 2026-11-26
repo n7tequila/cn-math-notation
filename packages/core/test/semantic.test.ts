@@ -215,14 +215,11 @@ describe("多位数乘法", () => {
   test("三位数乘一位数（329×4，样本）：简写，进位 3、1", () => {
     expect(shape(build("329×4"))).toEqual(["2:3 1:2 0:9", "× 0:4", "jin 2:1 1:3", "---", "3:1 2:3 1:1 0:6"]);
   });
-  test("小数乘法属第二期", () => {
-    expect(() => build("1.2×3")).toThrow(/第二期/);
-  });
 });
 
 describe("除法", () => {
-  test("71÷4（样本）：商 17，余 3", () => {
-    expect(shape(build("71÷4"))).toEqual([
+  test("71÷4（样本）：remainder 时商 17，余 3", () => {
+    expect(shape(build("71÷4", "remainder"))).toEqual([
       "shang 1:1 0:7",
       "chu4 1:7 0:1",
       "1:4",
@@ -249,21 +246,21 @@ describe("除法", () => {
     ]);
   });
   test("81÷4：商末尾是 0，余数 1", () => {
-    expect(shape(build("81÷4"))).toEqual(["shang 1:2 0:0", "chu4 1:8 0:1", "1:8", "---", "0:1"]);
+    expect(shape(build("81÷4", "remainder"))).toEqual(["shang 1:2 0:0", "chu4 1:8 0:1", "1:8", "---", "0:1"]);
   });
   test("首位不够除（156÷3）：商从十位开始", () => {
     expect(shape(build("156÷3"))[0]).toBe("shang 1:5 0:2");
     expect(shape(build("156÷3"))[2]).toBe("2:1 1:5"); // 第一步乘积 15 与被除数的“15”对齐
   });
   test("被除数比除数小（3÷4）：商 0 余 3", () => {
-    expect(shape(build("3÷4"))).toEqual(["shang 0:0", "chu4 0:3", "0:0", "---", "0:3"]);
+    expect(shape(build("3÷4", "remainder"))).toEqual(["shang 0:0", "chu4 0:3", "0:0", "---", "0:3"]);
   });
   test("两位数除数（576÷24）", () => {
     expect(shape(build("576÷24"))[0]).toBe("shang 1:2 0:4");
   });
-  test("除数为 0、小数除法报错", () => {
+  test("除数为 0 报错", () => {
     expect(() => build("7÷0")).toThrow(/不能是 0/);
-    expect(() => build("7.5÷3")).toThrow(/第二期/);
+    expect(() => build("7.5÷0")).toThrow(/不能是 0/);
   });
 });
 
@@ -287,7 +284,7 @@ describe("孩子的答案", () => {
   test("写了孩子的答案：乘法不画部分积，除法不画各步", () => {
     expect(shape(build("43×37=1491"))).toEqual(["1:4 0:3", "× 1:3 0:7", "---", "3:1 2:4 1:9 0:1"]);
     expect(shape(build("71÷4=16……7"))).toEqual(["shang 1:1 0:6", "chu4 1:7 0:1", "---", "0:7"]);
-    expect(shape(build("71÷4=17"))).toEqual(["shang 1:1 0:7", "chu4 1:7 0:1"]);
+    expect(shape(build("71÷4=17", "remainder"))).toEqual(["shang 1:1 0:7", "chu4 1:7 0:1"]);
   });
   test("写了孩子的答案：补的 0 也不画（同样是程序加的）", () => {
     const l = build("30.5-25.21=5.29");

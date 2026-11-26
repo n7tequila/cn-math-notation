@@ -34,6 +34,11 @@ const padZero = byId<HTMLInputElement>("padZero");
 const strikeZero = byId<HTMLInputElement>("strikeZero");
 const multiCarry = byId<HTMLInputElement>("multiCarry");
 const colorByDigit = byId<HTMLInputElement>("colorByDigit");
+const carry = byId<HTMLInputElement>("carry");
+const markPoint = byId<HTMLInputElement>("markPoint");
+const markAppended = byId<HTMLInputElement>("markAppended");
+const remainder = byId<HTMLInputElement>("remainder");
+const pointColumn = byId<HTMLInputElement>("pointColumn");
 const mode = byId<HTMLSelectElement>("mode");
 const processMode = byId<HTMLSelectElement>("process");
 
@@ -51,6 +56,11 @@ function currentDefaults(): StyleOptions {
     colorByDigit: colorByDigit.checked,
     mode: mode.value as MulMode,
     process: processMode.value as ProcessMode,
+    carry: carry.checked,
+    markPoint: markPoint.checked,
+    markAppended: markAppended.checked,
+    remainder: remainder.checked,
+    pointColumn: pointColumn.checked,
   };
 }
 
@@ -84,19 +94,7 @@ function copyButton(mathml: string): HTMLButtonElement {
 }
 
 function applyDefaults(): void {
-  register(instance, {
-    defaults: {
-      carryAt: carryAt.value as CarryAt,
-      operatorPlacement: operatorPlacement.value as OperatorPlacement,
-      guides: guides.checked,
-      padZero: padZero.checked,
-      strikeZero: strikeZero.checked,
-      multiCarry: multiCarry.checked,
-      colorByDigit: colorByDigit.checked,
-      mode: mode.value as MulMode,
-      process: processMode.value as ProcessMode,
-    },
-  });
+  register(instance, { defaults: currentDefaults() });
 }
 
 /** 空行分隔的每一块单独渲染，一块出错不影响其他块。 */
@@ -194,7 +192,7 @@ exampleSelect.addEventListener("change", () => {
   source.focus();
 });
 
-for (const control of [carryAt, operatorPlacement, guides, padZero, strikeZero, multiCarry, colorByDigit, mode, processMode]) {
+for (const control of [carryAt, operatorPlacement, guides, padZero, strikeZero, multiCarry, colorByDigit, carry, markPoint, markAppended, remainder, pointColumn, mode, processMode]) {
   control.addEventListener("change", () => {
     applyDefaults();
     render();

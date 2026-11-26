@@ -1,10 +1,12 @@
 /**
- * 长除法竖式（整数被除数、整数除数）。小数除法属第二期。
+ * 长除法竖式（整数被除数、整数除数，整除或写余数）。小数除法与“除成小数”见 div-decimal.ts。
  * 按课本写法：商从第一个够除的位开始写；每步写乘积、画横线、写余数并落下下一位；
  * 余数落位后仍不够除时商 0，不写这一步的乘积，直接再落一位；最后一行是余数（整除写 0）。
  */
 import type { Cell, Layout, Row } from "../model.ts";
+import type { StyleOptions } from "../options.ts";
 import { answerCells } from "./answer.ts";
+import { decimalDivLayout } from "./div-decimal.ts";
 import { ExpressionError, cellsOf, parseNum, type Num } from "./numbers.ts";
 import type { Expression } from "./parse-expr.ts";
 
@@ -71,8 +73,18 @@ function quotientCells(quotient: ReadonlyMap<number, number>): Cell[] {
     .map(([col, d]) => ({ col, content: { kind: "digit", text: String(d) }, marks: [] }));
 }
 
-export function divLayout(e: Expression, process = true): Layout {
-  if (e.a.frac !== "" || e.b.frac !== "") throw new ExpressionError("小数除法属第二期，暂请用直写布局 \\shushi*{…}");
+/**
+ * 整数除以整数：整除、选了 remainder、或孩子的答案写了余数时按余数写法；
+ * 其余（有小数、或除不尽）除成小数（维护者 2026-11-26 定默认除成小数）。
+ */
+export function divLayout(e: Expression, style: StyleOptions, process = true): Layout {
+  const integers = e.a.frac === "" && e.b.frac === "";
+  const exact = integers && BigInt(e.b.int) !== 0n && BigInt(e.a.int) % BigInt(e.b.int) === 0n;
+  const remainderStyle = integers && (style.remainder || e.remainder !== undefined || exact || BigInt(e.b.int) === 0n);
+  return remainderStyle ? integerDivLayout(e, process) : decimalDivLayout(e, style, process);
+}
+
+function integerDivLayout(e: Expression, process: boolean): Layout {
   const divisor = BigInt(e.b.int);
   if (divisor === 0n) throw new ExpressionError("除数不能是 0");
   const steps = longDivision(e.a.int, divisor);

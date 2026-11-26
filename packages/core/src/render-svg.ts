@@ -2,8 +2,9 @@
  * 布局 → SVG 字符串。几何单位是 px，1em = FONT_SIZE px；对外同时给出 em 尺寸，便于嵌入 KaTeX。
  * 画法依据沪教版样本（设计草案 §11）。
  */
-import type { CarryRow, Cell, DigitRow, Layout, Operator, Row } from "./model.ts";
+import type { CarryRow, Cell, DigitRow, Layout, Operator, PointMark, Row } from "./model.ts";
 import { DEFAULT_STYLE, type StyleOptions } from "./options.ts";
+import { toGapPoints } from "./point-style.ts";
 
 export const FONT_SIZE = 24;
 const CELL_W = 28;
@@ -16,6 +17,8 @@ const OP_W = 26;
 const PAD = 6;
 const BRACKET_W = 12;
 const DIVISOR_CHAR_W = 14;
+/** 除数里划掉的小数点额外占的宽度。 */
+const DIVISOR_POINT_W = 10;
 
 export const COLORS = {
   ink: "currentColor",
@@ -53,7 +56,7 @@ function columnsOf(layout: Layout): number[] {
 function maxDivisorWidth(layout: Layout): number {
   let w = 0;
   for (const row of layout.rows) {
-    if (row.kind === "digits" && row.divisor !== undefined) w = Math.max(w, row.divisor.length * DIVISOR_CHAR_W + 8);
+    if (row.kind === "digits" && row.divisor !== undefined) w = Math.max(w, divisorTextWidth(row) + 8);
   }
   return w;
 }
@@ -86,6 +89,11 @@ function buildGeometry(layout: Layout, style: StyleOptions): Geometry {
   return { colLeft, colWidth, gridLeft, gridRight: x };
 }
 
+function divisorTextWidth(row: DigitRow): number {
+  const extra = row.divisorStruckPoint === undefined ? 0 : DIVISOR_POINT_W;
+  return (row.divisor?.length ?? 0) * DIVISOR_CHAR_W + extra;
+}
+
 function leftmostCol(row: DigitRow | CarryRow): number {
   return Math.max(...row.cells.map((c) => c.col));
 }
@@ -100,6 +108,19 @@ function text(x: number, y: number, body: string, size: number, fill: string, ex
 
 function fmt(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
+/**
+ * 空隙小数点（小数乘除法）：画在 (x, baseline) 处；hua 再加一道红色短斜线（课本的“、”）。
+ */
+function drawGapPoint(x: number, baseline: number, point: PointMark): string {
+  const fill = point === "hong" ? COLORS.teach : COLORS.ink;
+  const dot = `<circle class="cmn-dian" cx="${fmt(x)}" cy="${fmt(baseline - 1.5)}" r="1.8" fill="${fill}"/>`;
+  if (point !== "hua") return dot;
+  return (
+    dot +
+    `<line class="cmn-dian-hua" x1="${fmt(x - 3)}" y1="${fmt(baseline - 8)}" x2="${fmt(x + 3)}" y2="${fmt(baseline + 1)}" stroke="${COLORS.teach}" stroke-width="1.6" stroke-linecap="round"/>`
+  );
 }
 
 function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
@@ -118,6 +139,7 @@ function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
   } else if (cell.content.kind === "point") {
     parts.push(`<circle cx="${fmt(x)}" cy="${fmt(baseline - 1.5)}" r="1.8" fill="${cell.color ?? COLORS.ink}"/>`);
   }
+  if (cell.point !== undefined) parts.push(drawGapPoint(x + geo.colWidth(cell.col) / 2, baseline, cell.point));
   if (marks.has("tui")) parts.push(`<circle class="cmn-tui" cx="${fmt(x)}" cy="${fmt(top + 1)}" r="2.6" fill="${COLORS.teach}"/>`);
   if (marks.has("bu")) {
     parts.push(
@@ -156,13 +178,27 @@ function drawCarryRow(geo: Geometry, row: CarryRow, top: number, sitsOnRule: boo
 function drawDivisor(geo: Geometry, row: DigitRow, top: number): string {
   if (row.divisor === undefined) return "";
   const bracketX = (geo.colLeft.get(leftmostCol(row)) ?? geo.gridLeft) - 4;
-  const divisorX = bracketX - BRACKET_W / 2 - (row.divisor.length * DIVISOR_CHAR_W) / 2;
+  const divisorX = bracketX - BRACKET_W / 2 - divisorTextWidth(row) / 2;
   const lineY = top + 3;
   return [
-    text(divisorX, top + ROW_H * 0.76, row.divisor, FONT_SIZE, COLORS.ink),
+    drawDivisorText(row, divisorX, top + ROW_H * 0.76),
     `<path class="cmn-bracket" style="stroke:${COLORS.ink};fill:none" d="M ${fmt(bracketX)} ${fmt(lineY)} Q ${fmt(bracketX + 7)} ${fmt(top + ROW_H / 2)} ${fmt(bracketX - 2)} ${fmt(top + ROW_H - 2)}" fill="none" stroke="${COLORS.ink}" stroke-width="1.3"/>`,
     `<line x1="${fmt(bracketX)}" y1="${fmt(lineY)}" x2="${fmt(geo.gridRight + 4)}" y2="${fmt(lineY)}" stroke="${COLORS.ink}" stroke-width="1.3"/>`,
   ].join("");
+}
+
+/** 除数：有划掉的小数点时逐个字符排，把小数点画在空隙里。 */
+function drawDivisorText(row: DigitRow, centerX: number, baseline: number): string {
+  const divisor = row.divisor ?? "";
+  const k = row.divisorStruckPoint;
+  if (k === undefined) return text(centerX, baseline, divisor, FONT_SIZE, COLORS.ink);
+  const left = centerX - divisorTextWidth(row) / 2;
+  const chars = [...divisor].map((ch, i) => {
+    const x = left + i * DIVISOR_CHAR_W + DIVISOR_CHAR_W / 2 + (i >= k ? DIVISOR_POINT_W : 0);
+    return text(x, baseline, ch, FONT_SIZE, COLORS.ink);
+  });
+  const pointX = left + k * DIVISOR_CHAR_W + DIVISOR_POINT_W / 2;
+  return chars.join("") + drawGapPoint(pointX, baseline, "hua");
 }
 
 function rowHeight(row: Row): number {
@@ -196,7 +232,10 @@ export function describe(layout: Layout): string {
   const lines = layout.rows.flatMap((row) => {
     if (row.kind !== "digits") return [];
     const digits = row.cells
-      .map((c) => (c.content.kind === "digit" ? c.content.text : c.content.kind === "point" ? "点" : ""))
+      .map((c) => {
+        const body = c.content.kind === "digit" ? c.content.text : c.content.kind === "point" ? "点" : "";
+        return c.point === "dot" || c.point === "hong" ? `${body}点` : body;
+      })
       .join("");
     if (row.divisor !== undefined) return [`${digits} 除以 ${row.divisor}`];
     if (row.quotient) return [`商 ${digits}`];
@@ -230,10 +269,11 @@ export interface RenderOptions {
 }
 
 export function renderLayout(
-  layout: Layout,
+  source: Layout,
   style: StyleOptions = DEFAULT_STYLE,
   render: RenderOptions = {},
 ): RenderedSvg {
+  const layout = style.pointColumn ? source : toGapPoints(source);
   const geo = buildGeometry(layout, style);
   const body: string[] = [];
   const left = ruleLeft(layout, geo);

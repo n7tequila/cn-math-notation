@@ -39,6 +39,7 @@ import { renderLayout, type RenderedSvg, type RenderOptions } from "./render-svg
 import { layoutToMathML, type MathMLOptions } from "./mathml.ts";
 
 export { layoutToMathML, type MathMLOptions } from "./mathml.ts";
+export { toGapPoints } from "./point-style.ts";
 
 /** 直写布局一步到位：原文 + 选项原文 → SVG。base 是未写选项时的默认样式。 */
 export function renderShushiLayout(

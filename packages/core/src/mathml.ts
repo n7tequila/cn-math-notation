@@ -2,16 +2,19 @@
  * 布局 → MathML（MathML 3 §3.6 小学算术：mstack / mlongdiv / mscarries / msline）。
  *
  * - 列对齐：每行从自己的最高位写到全竖式的最低列，缺的格子补空 <mrow/>，统一 stackalign="right"，
- *   不依赖渲染器对小数点对齐的实现；小数点占一列（与规范一致）。
+ *   不依赖渲染器对小数点对齐的实现；pointColumn 时小数点占一列（与规范一致），默认与前一位同格（见下）。
  * - 进位、退位点：合并成该行前面的一个 <mscarries>，每格用 <mscarry location=…> 指定方位。
  *   进位坐在横线上（课本写法）→ 挂在上一行，location s，并用看不见的占位进位铺满整行（见 mscarries 的 fillTop）；
  *   carries=above 时改为 location n（画在上一行上方）。进位写在下一行上方 → 挂在下一行，location n；
  *   退位点 → location n，内容“·”。左下写法（carryAt=sw）在 MathML 里不区分。
  * - 补 0 → menclose box；划掉 → menclose updiagonalstrike；错误 → mathbackground；着色、红色强调 → mathcolor。
+ * - 空隙小数点（默认）：与前一位合成一格 <mrow><mn>4</mn><mn>.</mn></mrow>，不另占一列；
+ *   划掉的小数点 → menclose updiagonalstrike。
  * - 数位虚线在 MathML 里没有对应写法，导出时省略。
  */
-import type { CarryRow, Cell, DigitRow, Layout, Operator } from "./model.ts";
+import type { CarryRow, Cell, DigitRow, Layout, Operator, PointMark } from "./model.ts";
 import { DEFAULT_STYLE, type StyleOptions } from "./options.ts";
+import { toGapPoints } from "./point-style.ts";
 import { COLORS, describe } from "./render-svg.ts";
 
 const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
@@ -53,6 +56,12 @@ function allColumns(layout: Layout): number[] {
   return out;
 }
 
+function pointElement(point: PointMark): string {
+  if (point === "hong") return `<mn mathcolor="${COLORS.teach}">.</mn>`;
+  if (point === "hua") return `<menclose notation="updiagonalstrike"><mn>.</mn></menclose>`;
+  return "<mn>.</mn>";
+}
+
 function cellElement(cell: Cell): string {
   if (cell.content.kind === "blank") {
     return cell.marks.includes("err") ? `<mspace width="0.5em" mathbackground="${COLORS.errBg}"/>` : EMPTY;
@@ -66,7 +75,7 @@ function cellElement(cell: Cell): string {
   let el = `<mn${attrs.length > 0 ? " " + attrs.join(" ") : ""}>${text}</mn>`;
   if (marks.has("bu")) el = `<menclose notation="box" mathcolor="${COLORS.teach}">${el}</menclose>`;
   if (marks.has("hua")) el = `<menclose notation="updiagonalstrike">${el}</menclose>`;
-  return el;
+  return cell.point === undefined ? el : `<mrow>${el}${pointElement(cell.point)}</mrow>`;
 }
 
 /** 一行格子：从这一行的最高位写到全竖式最低列，缺的补空。 */
@@ -211,12 +220,20 @@ function stackBody(layout: Layout, skip: ReadonlySet<number>, mode: "textbook" |
   return parts.filter((p) => p !== "");
 }
 
+/** 除数；有划掉的小数点时拆开写。 */
+function divisorElement(row: DigitRow): string {
+  const divisor = row.divisor ?? "";
+  const k = row.divisorStruckPoint;
+  if (k === undefined) return `<mn>${escapeXml(divisor)}</mn>`;
+  const part = (s: string): string => (s === "" ? "" : `<mn>${escapeXml(s)}</mn>`);
+  return `<mrow>${part(divisor.slice(0, k))}${pointElement("hua")}${part(divisor.slice(k))}</mrow>`;
+}
+
 /**
- * 竖式布局 → MathML 字符串。style 目前不影响输出（左下进位写法在 MathML 里不区分），
- * 保留参数以便以后按样式调整导出。
+ * 竖式布局 → MathML 字符串。style 只影响小数点写法（pointColumn）；左下进位写法在 MathML 里不区分。
  */
-export function layoutToMathML(layout: Layout, style: StyleOptions = DEFAULT_STYLE, opts: MathMLOptions = {}): string {
-  void style;
+export function layoutToMathML(source: Layout, style: StyleOptions = DEFAULT_STYLE, opts: MathMLOptions = {}): string {
+  const layout = style.pointColumn ? source : toGapPoints(source);
   const quotientIndex = layout.rows.findIndex((r) => r.kind === "digits" && r.quotient === true);
   const dividendIndex = layout.rows.findIndex((r) => r.kind === "digits" && r.divisor !== undefined);
   let body: string;
@@ -228,7 +245,7 @@ export function layoutToMathML(layout: Layout, style: StyleOptions = DEFAULT_STY
     const rest = stackBody(layout, new Set([quotientIndex, dividendIndex]), opts.carries ?? "textbook");
     body =
       `<mlongdiv longdivstyle="lefttop" stackalign="right">` +
-      `<mn>${escapeXml(dividend.divisor!)}</mn>${result}` +
+      `${divisorElement(dividend)}${result}` +
       `<msrow>${rowCells(dividend.cells, cols).join("")}</msrow>${rest.join("")}</mlongdiv>`;
   } else {
     body = `<mstack stackalign="right">${stackBody(layout, new Set(), opts.carries ?? "textbook").join("")}</mstack>`;

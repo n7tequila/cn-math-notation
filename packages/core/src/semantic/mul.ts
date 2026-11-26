@@ -1,15 +1,19 @@
 /**
- * 乘法竖式（整数）。小数乘法属第二期。
+ * 乘法竖式（整数与小数）。
  * - 一位数乘：简写（进位小字，坐在横线上）或分步式（每位分别乘再相加），由 mode 决定。
  * - 多位数乘：每个非 0 的乘数位一行部分积，按位左移；multiCarry 画各组进位，colorByDigit 按乘数位着色。
  *   乘数中间的 0 不写部分积。
  * - 因数末尾有 0（简便写法，样本“用一位数乘-末尾有0”）：0 前面的数对齐，末尾的 0 甩在外面不参与计算，
  *   积的末尾再添上同样多的 0。如 380×3：3 对齐 8，算 38×3=114，再添 0 得 1140。
+ * - 小数（样本“小数乘法”，设计草案 §11.2）：两个因数末位对齐，按整数乘，部分积不点小数点；
+ *   积的小数点不占列，写在空隙里（markPoint 标红）；积前面位数不够补 0（0.036，不加框）；
+ *   积末尾的 0 划掉（strikeZero）。小数因数末尾有 0（3.50）暂不支持。
  */
 import type { Cell, Layout, Row } from "../model.ts";
 import type { StyleOptions } from "../options.ts";
 import { answerCells } from "./answer.ts";
-import { ExpressionError, carryCells, cellsOf, digitAt, parseNum, type Num } from "./numbers.ts";
+import { toGapCells, numCells, trimNum } from "./gap-point.ts";
+import { ExpressionError, carryCells, cellsOf, digitAt, fromScaled, parseNum, type Num } from "./numbers.ts";
 import type { Expression } from "./parse-expr.ts";
 
 /** 按乘数位着色的调色板：个位红、十位蓝、百位绿……（与样本“乘两位数有进位”一致）。 */
@@ -35,22 +39,54 @@ function num(value: bigint): Num {
   return parseNum(value.toString());
 }
 
-function finalRow(product: Num, e: Expression, shift = 0): Row {
-  const cells: Cell[] = e.answer === undefined ? cellsOf(product, { shift }) : answerCells(e.answer, product, shift);
-  return { kind: "digits", cells };
+/** 积：places 位小数（小数点写在空隙里）。 */
+interface Product {
+  readonly value: Num;
+  readonly places: number;
 }
 
-/** 去掉末尾 0 之后参与计算的部分：core × 10^zeros。 */
+function productCells(product: Product, style: StyleOptions): Cell[] {
+  const { value, places } = product;
+  if (places === 0) return cellsOf(value);
+  const trailing = style.strikeZero ? value.frac.length - value.frac.replace(/0+$/, "").length : 0;
+  return numCells(value, {
+    point: style.markPoint ? "hong" : "dot",
+    marksAt: (col) => (col < trailing ? ["hua"] : []),
+  });
+}
+
+function finalRow(product: Product, e: Expression, style: StyleOptions): Row {
+  if (e.answer === undefined) return { kind: "digits", cells: productCells(product, style) };
+  if (product.places === 0) return { kind: "digits", cells: answerCells(e.answer, product.value) };
+  // 84.0 与 84 是同一个数：按去掉末尾 0 的积比较，列仍按积的位数对齐
+  const cells = answerCells(e.answer, trimNum(product.value));
+  return { kind: "digits", cells: toGapCells(cells, product.places) };
+}
+
+/** 参与计算的部分：core × 10^zeros ÷ 10^places（整数去掉末尾 0；小数按整数算）。 */
 interface Factor {
   readonly full: Num;
   readonly core: Num;
   readonly zeros: number;
+  readonly places: number;
 }
 
 function factor(n: Num): Factor {
+  if (n.frac !== "") {
+    if (n.frac.endsWith("0")) {
+      throw new ExpressionError(`小数因数末尾有 0（${n.int}.${n.frac}）暂不支持，请先去掉末尾的 0`);
+    }
+    const core = (n.int + n.frac).replace(/^0+(?=\d)/, "");
+    return { full: n, core: { int: core, frac: "" }, zeros: 0, places: n.frac.length };
+  }
   const core = n.int.replace(/0+$/, "");
-  if (core === "") return { full: n, core: n, zeros: 0 }; // 因数是 0
-  return { full: n, core: { int: core, frac: "" }, zeros: n.int.length - core.length };
+  if (core === "") return { full: n, core: n, zeros: 0, places: 0 }; // 因数是 0
+  return { full: n, core: { int: core, frac: "" }, zeros: n.int.length - core.length, places: 0 };
+}
+
+/** 因数这一行：小数点写在空隙里，整数因数末尾的 0 甩在外面。 */
+function factorCells(f: Factor, z: number): Cell[] {
+  return numCells(f.full, { shift: z - f.zeros });
 }
 
 interface Plan {
@@ -62,19 +98,19 @@ interface Plan {
 
 function heads(plan: Plan, multiplierCells: Cell[]): Row[] {
   return [
-    { kind: "digits", cells: cellsOf(plan.a.full, { shift: plan.z - plan.a.zeros }) },
+    { kind: "digits", cells: factorCells(plan.a, plan.z) },
     { kind: "digits", operator: "×", cells: multiplierCells },
   ];
 }
 
-function oneDigit(e: Expression, style: StyleOptions, product: Num, plan: Plan): Row[] {
+function oneDigit(e: Expression, style: StyleOptions, product: Product, plan: Plan): Row[] {
   const d = Number(plan.b.core.int);
   const a = plan.a.core;
-  const head = heads(plan, cellsOf(plan.b.full, { shift: plan.z - plan.b.zeros }));
+  const head = heads(plan, factorCells(plan.b, plan.z));
   if (style.mode === "compact") {
-    const carries = carriesOf(a, d, plan.z);
+    const carries = style.carry ? carriesOf(a, d, plan.z) : new Map<number, number>();
     const carryRow: Row[] = carries.size > 0 ? [{ kind: "carry", cells: carryCells(carries) }] : [];
-    return [...head, ...carryRow, { kind: "hline" }, finalRow(product, e)];
+    return [...head, ...carryRow, { kind: "hline" }, finalRow(product, e, style)];
   }
   // 分步式：个位起，每一位乘出的积（带上该位的 0）各写一行，再相加
   const parts: Row[] = [];
@@ -83,15 +119,14 @@ function oneDigit(e: Expression, style: StyleOptions, product: Num, plan: Plan):
     if (ai === 0) continue;
     parts.push({ kind: "digits", cells: cellsOf(num(BigInt(ai * d) * 10n ** BigInt(i)), { shift: plan.z }) });
   }
-  if (parts.length <= 1) return [...head, { kind: "hline" }, finalRow(product, e)];
-  return [...head, { kind: "hline" }, ...parts, { kind: "hline" }, finalRow(product, e)];
+  if (parts.length <= 1) return [...head, { kind: "hline" }, finalRow(product, e, style)];
+  return [...head, { kind: "hline" }, ...parts, { kind: "hline" }, finalRow(product, e, style)];
 }
 
-function multiDigit(e: Expression, style: StyleOptions, product: Num, plan: Plan): Row[] {
+function multiDigit(e: Expression, style: StyleOptions, product: Product, plan: Plan): Row[] {
   const a = BigInt(plan.a.core.int);
   const bDigits = [...plan.b.core.int].reverse().map(Number); // 个位在前
-  const bShift = plan.z - plan.b.zeros;
-  const multiplierCells = cellsOf(plan.b.full, { shift: bShift }).map((c) => {
+  const multiplierCells = factorCells(plan.b, plan.z).map((c) => {
     const j = c.col - plan.z; // 0 前面那部分的第 j 位
     return style.colorByDigit && j >= 0 ? { ...c, color: colorFor(j) } : c;
   });
@@ -100,7 +135,7 @@ function multiDigit(e: Expression, style: StyleOptions, product: Num, plan: Plan
   partials.forEach(({ d, j }, k) => {
     const color = style.colorByDigit ? colorFor(j) : undefined;
     const shift = j + plan.z;
-    const carries = style.multiCarry ? carriesOf(plan.a.core, d, shift) : new Map<number, number>();
+    const carries = style.multiCarry && style.carry ? carriesOf(plan.a.core, d, shift) : new Map<number, number>();
     if (carries.size > 0) rows.push({ kind: "carry", cells: carryCells(carries, color) });
     if (k === 0) rows.push({ kind: "hline" });
     const value = num(a * BigInt(d));
@@ -108,26 +143,27 @@ function multiDigit(e: Expression, style: StyleOptions, product: Num, plan: Plan
   });
   const onlyRowIsProduct = partials.length === 1 && partials[0]!.j === 0 && plan.z === 0;
   if (onlyRowIsProduct) {
-    if (e.answer !== undefined) rows[rows.length - 1] = finalRow(product, e);
+    rows[rows.length - 1] = finalRow(product, e, style);
     return rows;
   }
-  return [...rows, { kind: "hline" }, finalRow(product, e)];
+  return [...rows, { kind: "hline" }, finalRow(product, e, style)];
 }
 
 /** 不画过程：只写两个因数、横线和积（或孩子的答案）。 */
-function withoutProcess(e: Expression, product: Num, plan: Plan): Row[] {
-  const head = heads(plan, cellsOf(plan.b.full, { shift: plan.z - plan.b.zeros }));
-  return [...head, { kind: "hline" }, finalRow(product, e)];
+function withoutProcess(e: Expression, style: StyleOptions, product: Product, plan: Plan): Row[] {
+  const head = heads(plan, factorCells(plan.b, plan.z));
+  return [...head, { kind: "hline" }, finalRow(product, e, style)];
 }
 
 export function mulLayout(e: Expression, style: StyleOptions, process = true): Layout {
-  if (e.a.frac !== "" || e.b.frac !== "") throw new ExpressionError("小数乘法属第二期，暂请用直写布局 \\shushi*{…}");
-  const product = num(BigInt(e.a.int) * BigInt(e.b.int));
   const a = factor(e.a);
   const b = factor(e.b);
+  const places = a.places + b.places;
+  const scaledProduct = BigInt(e.a.int + e.a.frac) * BigInt(e.b.int + e.b.frac);
+  const product: Product = { value: fromScaled(scaledProduct, places), places };
   const plan: Plan = { a, b, z: a.zeros + b.zeros };
   const rows = !process
-    ? withoutProcess(e, product, plan)
+    ? withoutProcess(e, style, product, plan)
     : b.core.int.length === 1
       ? oneDigit(e, style, product, plan)
       : multiDigit(e, style, product, plan);

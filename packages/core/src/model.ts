@@ -1,7 +1,8 @@
 /**
  * 竖式布局模型（第一期：整数与小数竖式、长除法）。
  *
- * 列号：个位为 0，向高位为正，向小数位为负；小数点本身占 -0.5 这一“窄列”。
+ * 列号：个位为 0，向高位为正，向小数位为负；小数点本身占 -0.5 这一“窄列”（加减法）。
+ * 小数乘除法的小数点不占列，记在前一格的 point 上，列号按整数排（最低一位为 0 附近）。
  * 设计依据：docs/design/2026-11-19-设计草案.md §3、§11。
  */
 
@@ -12,11 +13,18 @@ export type CellContent =
   | { readonly kind: "point" }
   | { readonly kind: "blank" };
 
+/**
+ * 写在这一格右边空隙里的小数点（小数乘除法：小数点不占列，设计草案 §11.2）。
+ * dot 普通；hong 标红（markPoint）；hua 原来的小数点被划掉（除数是小数时）。
+ */
+export type PointMark = "dot" | "hong" | "hua";
+
 export interface Cell {
   readonly col: number;
   readonly content: CellContent;
   readonly marks: readonly CellMark[];
   readonly color?: string;
+  readonly point?: PointMark;
 }
 
 export type Operator = "+" | "-" | "×" | "÷";
@@ -30,6 +38,8 @@ export interface DigitRow {
   readonly quotient?: true;
   /** 长除法：被除数行，带除数。 */
   readonly divisor?: string;
+  /** 除数里被划掉的小数点：写在第几个字符之后（除数是小数、化成整数时）。 */
+  readonly divisorStruckPoint?: number;
 }
 
 /** 进位行：每个数字记在“进到的那一列”。 */

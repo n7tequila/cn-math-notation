@@ -48,10 +48,13 @@ describe("renderLayout", () => {
     expect(renderShushiLayout(String.raw`\hua{3} 4 6`).svg).toContain("<line");
   });
 
-  test("小数竖式也画数位虚线，小数点那条窄列两侧各一条", () => {
+  test("小数竖式也画数位虚线：默认小数点不占列；pointColumn 时小数点那条窄列两侧各一条", () => {
     const svg = renderShushiLayout(String.raw`24.5 \\ + 16.3 \\ \hline 40.8`).svg;
+    // 十位、个位、十分位三列的左边界 + 最右边界 = 4 条
+    expect(countOf(svg, "cmn-guide")).toBe(4);
+    const old = renderShushiLayout(String.raw`24.5 \\ + 16.3 \\ \hline 40.8`, "pointColumn").svg;
     // 十位、个位、小数点、十分位四列的左边界 + 最右边界 = 5 条
-    expect(countOf(svg, "cmn-guide")).toBe(5);
+    expect(countOf(old, "cmn-guide")).toBe(5);
     expect(renderShushiLayout(String.raw`24.5 \\ + 16.3`, "guides=false").svg).not.toContain("cmn-guide");
   });
 
@@ -91,6 +94,11 @@ describe("parseOptions", () => {
       mode: "compact",
       strikeZero: true,
       process: "auto",
+      carry: true,
+      markPoint: false,
+      markAppended: false,
+      remainder: false,
+      pointColumn: false,
     });
   });
   test("只写键名表示 true", () => {

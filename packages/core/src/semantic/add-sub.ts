@@ -55,7 +55,7 @@ export function addLayout(e: Expression, style: StyleOptions, process = true): L
     { kind: "digits", cells: cellsOf(e.a, { places: shownPlaces(e.a, p, style, process), markPadded: true }) },
     { kind: "digits", operator: "+", cells: cellsOf(e.b, { places: shownPlaces(e.b, p, style, process), markPadded: true }) },
   ];
-  if (process && carries.size > 0) rows.push({ kind: "carry", cells: carryCells(carries) });
+  if (process && style.carry && carries.size > 0) rows.push({ kind: "carry", cells: carryCells(carries) });
   rows.push({ kind: "hline" }, resultRow(sum, e, p, style));
   return layoutOf(rows);
 }

@@ -28,6 +28,6 @@ export function buildSemantic(source: string, style: StyleOptions): Layout {
     case "×":
       return mulLayout(e, style, process);
     case "÷":
-      return divLayout(e, process);
+      return divLayout(e, style, process);
   }
 }

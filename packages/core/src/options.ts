@@ -31,6 +31,19 @@ export interface StyleOptions {
   readonly strikeZero: boolean;
   /** 是否画计算过程（语义式用）。 */
   readonly process: ProcessMode;
+  /** 进位总开关（语义式用）：关掉后加法、乘法都不画进位；多位乘法另需 multiCarry。 */
+  readonly carry: boolean;
+  /** 积的小数点标红（语义式小数乘法用，默认关）。 */
+  readonly markPoint: boolean;
+  /** 除法添的 0 与对应的商位标红（语义式小数除法用，默认关）。 */
+  readonly markAppended: boolean;
+  /**
+   * 整数除以整数写余数（17……3）。默认关：除不尽就添 0 除成小数（维护者 2026-11-26 定）。
+   * 孩子的答案写了余数时自动按余数画。
+   */
+  readonly remainder: boolean;
+  /** 小数点单独占一条窄列（加减法课本样本的写法）。默认关：小数点写在两个数字中间（维护者 2026-11-26 定）。 */
+  readonly pointColumn: boolean;
 }
 
 export const DEFAULT_STYLE: StyleOptions = {
@@ -43,9 +56,25 @@ export const DEFAULT_STYLE: StyleOptions = {
   mode: "compact",
   strikeZero: true,
   process: "auto",
+  carry: true,
+  markPoint: false,
+  markAppended: false,
+  remainder: false,
+  pointColumn: false,
 };
 
-const BOOLEAN_KEYS = ["guides", "multiCarry", "padZero", "colorByDigit", "strikeZero"] as const;
+const BOOLEAN_KEYS = [
+  "guides",
+  "multiCarry",
+  "padZero",
+  "colorByDigit",
+  "strikeZero",
+  "carry",
+  "markPoint",
+  "markAppended",
+  "remainder",
+  "pointColumn",
+] as const;
 
 export class OptionError extends Error {
   override readonly name = "OptionError";

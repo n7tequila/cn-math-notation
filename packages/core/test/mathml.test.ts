@@ -83,7 +83,7 @@ describe("MathML 导出", () => {
   });
 
   test("除法：mlongdiv（除数在左、商在上），子元素依次为除数、商、被除数、各步", () => {
-    const m = shushiToMathML("71÷4", undefined, undefined, { wrap: false });
+    const m = shushiToMathML("71÷4", "remainder", undefined, { wrap: false });
     expect(m).toBe(
       '<mlongdiv longdivstyle="lefttop" stackalign="right">' +
         "<mn>4</mn>" +

@@ -19,7 +19,7 @@ katex.render(String.raw`\shushi{403-167}`, element, { displayMode: true });
 
 | 写法 | 作用 |
 |---|---|
-| `\shushi{403-167}` | 语义式：只写算式，程序算出竖式（加减乘除，含小数加减） |
+| `\shushi{403-167}` | 语义式：只写算式，程序算出竖式（加减乘除，含小数） |
 | `\shushi{403-167=346}` | 写上孩子的答案，标出错的位 |
 | `\shushi*{ 7 4 \\ + 8 8 \\ \jin{1 1 ~} \\ \hline 1 6 2 }` | 直写布局：逐行写，写什么画什么 |
 | `\shushi[carryAt=sw, multiCarry]{538\times26}` | 方括号里写样式选项 |

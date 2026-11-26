@@ -84,7 +84,12 @@ export const SEMANTIC_EXAMPLES: readonly SemanticExample[] = [
     options: "multiCarry, colorByDigit, carryAt=sw",
   },
   { id: "sem-div", name: "除法 812÷4（商中间有 0）", expr: String.raw`812\div4` },
-  { id: "sem-div-remainder", name: "除法 725÷4", expr: String.raw`725\div4` },
+  { id: "sem-div-remainder", name: "除法有余数 725÷4", expr: String.raw`725\div4`, options: "remainder" },
+  { id: "sem-decimal-mul", name: "小数乘法 4.1×3.2", expr: String.raw`4.1\times3.2` },
+  { id: "sem-decimal-mul-zero", name: "积末尾 0 划掉 4.2×20", expr: String.raw`4.2\times20` },
+  { id: "sem-decimal-div", name: "小数除法 5.8÷4（添 0 标红）", expr: String.raw`5.8\div4`, options: "markAppended" },
+  { id: "sem-decimal-div-int", name: "整数除成小数 12÷50", expr: String.raw`12\div50` },
+  { id: "sem-decimal-divisor", name: "除数是小数 6.78÷1.2", expr: String.raw`6.78\div1.2` },
   { id: "sem-child-answer", name: "孩子的答案 403−167=346", expr: "403-167=346" },
 ];
 
