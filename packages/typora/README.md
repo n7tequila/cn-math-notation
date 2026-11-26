@@ -34,10 +34,8 @@ $$\dengshi{[100-(20+30)]\div5}$$
 ## 安装
 
 1. 安装 typora-community-plugin。
-2. 从本仓库 GitHub Releases 下载 `plugin.zip`，在插件管理里手动安装并启用。
+2. 在插件市场里搜索 cn-math-notation 安装（[上架申请](https://github.com/typora-community-plugin/typora-plugin-releases/pull/25)合并后可用）；或者从 [发布仓库的 Releases](https://github.com/n7tequila/typora-plugin-cn-math-notation/releases) 下载 `plugin.zip`，在插件管理里手动安装并启用。
 3. 重启 Typora。
-
-插件市场上架前只能手动安装。
 
 ## 已验证的版本
 
@@ -56,6 +54,12 @@ bun run install:dev  # 装到本机 Typora（macOS），再在插件管理里启
 ```
 
 插件版本（`package.json` 与 `src/manifest.json`，两处要一致）独立于库的版本。
+
+发版：插件市场按 `repo` 根目录找 README、按纯版本号 tag 找 `plugin.zip`，所以版本发在独立的发布仓库 [n7tequila/typora-plugin-cn-math-notation](https://github.com/n7tequila/typora-plugin-cn-math-notation)（源码仍在这里）：
+
+1. 两处版本号一起升，`bun run pack` 打出 `plugin.zip`。
+2. 在发布仓库打纯版本号的 tag（如 `0.2.0`），建同名 Release，上传 `plugin.zip`（文件名固定）。
+3. 发布仓库的 README 有改动时同步过去。
 
 ## 许可
 
