@@ -41,7 +41,7 @@ $$\dengshi{[100-(20+30)]\div5}$$
 
 | Typora | typora-community-plugin 核心 |
 |---|---|
-| 1.14.16（macOS） | 2.10.21 |
+| 1.14.16（macOS） | 2.10.21、2.10.86 |
 
 Typora 没有提供“自定义公式命令”的接口，本插件包住了 Typora 内部调用的 MathJax 渲染函数（`tex2svg`、`tex2svgPromise`、`tex2mml`），并用 Typora 内部的刷新函数重画公式。这些都不是公开接口，**Typora 升级后可能失效**：竖式会显示成公式报错。插件找不到这些入口时会在开发者工具的控制台里给出 `[cn-math-notation]` 开头的警告。升级 Typora 后请打开 [手测文档](test/typora-sample.md) 看一眼。
 

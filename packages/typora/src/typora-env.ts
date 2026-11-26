@@ -1,5 +1,5 @@
 /**
- * Typora 与 typora-community-plugin 运行时提供的全局对象（未公开接口，Typora 1.14.16 + 插件核心 2.10.21 上核实）。
+ * Typora 与 typora-community-plugin 运行时提供的全局对象（未公开接口，Typora 1.14.16 + 插件核心 2.10.21、2.10.86 上核实）。
  * 找不到时给出控制台警告，而不是悄悄失效。
  */
 import type { MathJaxLike } from "./mathjax-patch.ts";
