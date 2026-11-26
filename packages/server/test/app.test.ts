@@ -58,6 +58,14 @@ describe("GET /render.svg", () => {
     expect(first).not.toMatch(/MJX-\d+-/);
   });
 
+  test("公式里有 < > & 时 SVG 仍是合法 XML，PNG 也能出", async () => {
+    for (const tex of ["a<b", "x>0", String.raw`\{x \mid x<1\}`]) {
+      const svg = await (await get("/render.svg", { tex })).text();
+      expect(svg).not.toMatch(/="[^"]*[<>][^"]*"/);
+      expect((await get("/render.png", { tex })).status).toBe(200);
+    }
+  });
+
   test("短除法、树状图、十字相乘、综合除法都能出图", async () => {
     const cases = [
       String.raw`\duanchu[result]{36, 48}`,

@@ -1,5 +1,5 @@
 /**
- * 服务端 MathJax 4：TeX → SVG 字符串。递等式（core 只产出 TeX）和普通公式都走这里。
+ * 服务端 MathJax 4：TeX → SVG 字符串。递等式（core 只产出 TeX）和普通公式都走这里；宏包见 tex-packages.ts。
  * SVG 里的字形是路径（fontCache: local），转 PNG 时不依赖字体；只有 \text{} 里的文字是 <text>。
  */
 import { mathjax } from "@mathjax/src/js/mathjax.js";
@@ -8,15 +8,14 @@ import { SVG } from "@mathjax/src/js/output/svg.js";
 import { liteAdaptor } from "@mathjax/src/js/adaptors/liteAdaptor.js";
 import { RegisterHTMLHandler } from "@mathjax/src/js/handlers/html.js";
 import "@mathjax/src/js/util/asyncLoad/esm.js";
-import "@mathjax/src/js/input/tex/base/BaseConfiguration.js";
-import "@mathjax/src/js/input/tex/ams/AmsConfiguration.js";
 import { MathJaxNewcmFont } from "@mathjax/mathjax-newcm-font/js/svg.js";
 import { RenderError } from "./render-error.ts";
+import { TEX_PACKAGES } from "./tex-packages.ts";
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 const doc = mathjax.document("", {
-  InputJax: new TeX({ packages: ["base", "ams"] }),
+  InputJax: new TeX({ packages: [...TEX_PACKAGES] }),
   OutputJax: new SVG({ fontData: MathJaxNewcmFont, fontCache: "local" }),
 });
 
@@ -27,6 +26,11 @@ const ERROR_ATTR = /data-mjx-error="([^"]*)"/;
  */
 const GLYPH_ID_COUNTER = /\bMJX-\d+-/g;
 const STABLE_ID_PREFIX = "MJX-CMN-";
+/**
+ * MathJax 把公式原文抄进 data-latex 属性，但 lite 适配器不转义属性里的 < >，
+ * a<b 这样的公式会得到非法 XML（浏览器打不开、resvg 报错）。图片用不着这个属性，直接去掉。
+ */
+const LATEX_ATTR = /\sdata-latex="[^"]*"/g;
 
 function decodeEntities(s: string): string {
   return s
@@ -43,5 +47,5 @@ export async function texToSvg(tex: string): Promise<string> {
   const svg = adaptor.innerHTML(node);
   const error = ERROR_ATTR.exec(svg);
   if (error !== null) throw new RenderError(`TeX：${decodeEntities(error[1]!)}`);
-  return svg.replace(GLYPH_ID_COUNTER, STABLE_ID_PREFIX);
+  return svg.replace(LATEX_ATTR, "").replace(GLYPH_ID_COUNTER, STABLE_ID_PREFIX);
 }

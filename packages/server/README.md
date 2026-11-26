@@ -4,6 +4,8 @@
 
 支持本库全部写法（竖式、递等式、短除法、树状图、十字相乘、综合除法），普通 TeX 公式也能出图（交给服务端的 MathJax 4）。
 
+MathJax 加载的宏包与 Typora 一致（`\boldsymbol`、`\cancel`、`\ce`、`physics` 等都能用），只有几个有意不同：能往 SVG 里写 HTML、链接、样式的 `texhtml`、`html`（`\href`、`\style`、`\class`）不加载；未定义的命令返回 400，而不是像 Typora 那样画成红字。清单见 `src/tex-packages.ts`。
+
 ## 启动
 
 ```bash
