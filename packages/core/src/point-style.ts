@@ -4,7 +4,7 @@
  *
  * 布局模型（语义式加减、直写布局）仍按 -0.5 列记小数点；渲染、导出前用 toGapPoints 转换。
  */
-import type { Cell, Layout, Row } from "./model.ts";
+import type { Cell, Layout, PointMark, Row } from "./model.ts";
 
 /** 小数位数最多的一行有几位小数（最低列的相反数）。 */
 function fractionWidth(layout: Layout): number {
@@ -16,17 +16,27 @@ function fractionWidth(layout: Layout): number {
   return -low;
 }
 
+/**
+ * 小数点格上的标记换成空隙小数点的写法：\hua 划掉；\hong、\err 标红（小圆点没法像格子那样加底色，标红最接近）；
+ * \bu（补 0 的虚线框）对小数点没有意义，不保留。颜色单独带过去。
+ */
+function gapPointOf(pointCell: Cell): Pick<Cell, "point" | "pointColor"> {
+  const marks = new Set(pointCell.marks);
+  const point: PointMark = marks.has("hua") ? "hua" : marks.has("hong") || marks.has("err") ? "hong" : "dot";
+  return pointCell.color === undefined ? { point } : { point, pointColor: pointCell.color };
+}
+
 function convertCells(cells: readonly Cell[], shift: number): Cell[] {
   const pointCell = cells.find((c) => c.content.kind === "point");
   const moved = cells.filter((c) => c.content.kind !== "point").map((c) => ({ ...c, col: c.col + shift }));
   if (pointCell === undefined) return moved;
-  const point = pointCell.marks.includes("hong") ? "hong" : "dot";
+  const gapPoint = gapPointOf(pointCell);
   const onesCol = shift;
   if (moved.some((c) => c.col === onesCol)) {
-    return moved.map((c) => (c.col === onesCol ? { ...c, point } : c));
+    return moved.map((c) => (c.col === onesCol ? { ...c, ...gapPoint } : c));
   }
   // 没有个位（如直写的 .5）：放一个空格子承载小数点
-  const holder: Cell = { col: onesCol, content: { kind: "blank" }, marks: [], point };
+  const holder: Cell = { col: onesCol, content: { kind: "blank" }, marks: [], ...gapPoint };
   return [...moved, holder].sort((a, b) => b.col - a.col);
 }
 

@@ -13,6 +13,7 @@ import { renderShuzhuang, renderShuzhuangLayout } from "../factortree/index.ts";
 import { renderShizi, renderShiziLayout } from "../crossmul/index.ts";
 import { renderZonghe, renderZongheLayout } from "../synthdiv/index.ts";
 import { parseFormulaCommand, type FormulaFamily } from "./command.ts";
+import { escapeXml } from "../xml.ts";
 
 export type FormulaTranslation =
   | { readonly kind: "pass" }
@@ -55,7 +56,7 @@ function guarded<T>(label: string, fn: () => T): T | { readonly kind: "error"; r
 export function translateFormula(tex: string): FormulaTranslation {
   const cmd = parseFormulaCommand(tex);
   if (cmd.kind !== "command") return cmd;
-  const label = `\\${cmd.family}${cmd.starred ? "*" : ""}`;
+  const label = `\\${cmd.name}${cmd.starred ? "*" : ""}`;
   if (cmd.family === "dengshi") {
     const build = cmd.starred ? buildDengshiLayout : buildDengshi;
     return guarded(label, () => ({ kind: "tex", tex: build(cmd.body, cmd.options) }) as const);
@@ -64,9 +65,6 @@ export function translateFormula(tex: string): FormulaTranslation {
   return guarded(label, () => ({ kind: "svg", rendered: render(cmd.body, cmd.options) }) as const);
 }
 
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 /**
  * 复制为 MathML 时用：竖式给真正的 mstack / mlongdiv；
@@ -76,7 +74,7 @@ export function translateFormulaMathML(tex: string): FormulaMathMLTranslation {
   const cmd = parseFormulaCommand(tex);
   if (cmd.kind !== "command") return cmd;
   if (cmd.family === "shushi") {
-    const label = `\\shushi${cmd.starred ? "*" : ""}`;
+    const label = `\\${cmd.name}${cmd.starred ? "*" : ""}`;
     const toMathML = cmd.starred ? shushiLayoutToMathML : shushiToMathML;
     return guarded(label, () => ({ kind: "mathml", mathml: toMathML(cmd.body, cmd.options) }) as const);
   }

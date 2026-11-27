@@ -4,6 +4,7 @@
  */
 import { COLORS, FONT_SIZE, fmt, rootStyle, type RenderOptions, type RenderedSvg } from "../render-svg.ts";
 import type { ShortDivLayout, ShortDivRow, ShortDivTerm } from "./model.ts";
+import { escapeXml } from "../xml.ts";
 
 const CHAR_W = 14;
 const COL_GAP = 20;
@@ -87,7 +88,7 @@ export function renderShortDiv(layout: ShortDivLayout, render: RenderOptions = {
   const width = Math.max(geo.gridRight + PAD + 6, resultW);
   const label = describeShortDiv(layout);
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-duanchu" role="img" aria-label="${label}" style="${rootStyle(width, height, render.display ?? "inline-block")}" ` +
+    `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-duanchu" role="img" aria-label="${escapeXml(label)}" style="${rootStyle(width, height, render.display ?? "inline-block")}" ` +
     `viewBox="0 0 ${fmt(width)} ${fmt(height)}" width="${fmt(width / FONT_SIZE)}em" height="${fmt(height / FONT_SIZE)}em" ` +
     `font-family="'Helvetica Neue', Arial, 'PingFang SC', sans-serif">${body.join("")}</svg>`;
   return { svg, width, height, widthEm: width / FONT_SIZE, heightEm: height / FONT_SIZE, label };

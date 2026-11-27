@@ -34,6 +34,8 @@ export type ParsedFormula =
   | {
       readonly kind: "command";
       readonly family: FormulaFamily;
+      /** 用户实际写的命令名（拼音或英文别名，不带反斜杠和星号），报错时用。 */
+      readonly name: string;
       readonly starred: boolean;
       readonly options: string | undefined;
       readonly body: string;
@@ -71,7 +73,7 @@ export function parseFormulaCommand(tex: string): ParsedFormula {
   if (close < 0) return { kind: "error", message: `${label}：花括号没有配对` };
   if (skipSpaces(source, close + 1) !== source.length) return { kind: "error", message: MIXED_MESSAGE };
 
-  return { kind: "command", family, starred, options, body: source.slice(pos + 1, close) };
+  return { kind: "command", family, name: head[1]!, starred, options, body: source.slice(pos + 1, close) };
 }
 
 function skipSpaces(s: string, from: number): number {

@@ -6,6 +6,7 @@ import type { CarryRow, Cell, DigitRow, Layout, Operator, PointMark, Row } from 
 import { DEFAULT_STYLE, type StyleOptions } from "./options.ts";
 import { hasLetters, mathTextSvg } from "./math-text.ts";
 import { toGapPoints } from "./point-style.ts";
+import { escapeXml } from "./xml.ts";
 
 export const FONT_SIZE = 24;
 const CELL_W = 28;
@@ -140,8 +141,8 @@ export function fmt(n: number): string {
 /**
  * 空隙小数点（小数乘除法）：画在 (x, baseline) 处；hua 再加一道红色短斜线（课本的“、”）。
  */
-function drawGapPoint(x: number, baseline: number, point: PointMark): string {
-  const fill = point === "hong" ? COLORS.teach : COLORS.ink;
+function drawGapPoint(x: number, baseline: number, point: PointMark, color?: string): string {
+  const fill = color ?? (point === "hong" ? COLORS.teach : COLORS.ink);
   const dot = `<circle class="cmn-dian" cx="${fmt(x)}" cy="${fmt(baseline - 1.5)}" r="1.8" fill="${fill}"/>`;
   if (point !== "hua") return dot;
   return (
@@ -170,7 +171,7 @@ function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
   } else if (cell.content.kind === "point") {
     parts.push(`<circle cx="${fmt(x)}" cy="${fmt(baseline - 1.5)}" r="1.8" fill="${cell.color ?? COLORS.ink}"/>`);
   }
-  if (cell.point !== undefined) parts.push(drawGapPoint(x + geo.colWidth(cell.col) / 2, baseline, cell.point));
+  if (cell.point !== undefined) parts.push(drawGapPoint(x + geo.colWidth(cell.col) / 2, baseline, cell.point, cell.pointColor));
   if (marks.has("tui")) parts.push(`<circle class="cmn-tui" cx="${fmt(x)}" cy="${fmt(top + 1)}" r="2.6" fill="${COLORS.teach}"/>`);
   if (marks.has("bu")) {
     parts.push(
@@ -335,7 +336,7 @@ export function renderLayout(
   const guides = style.guides && !hasTerms(layout) ? drawGuides(geo, contentTop, y) : "";
   const label = describe(layout);
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-shushi" role="img" aria-label="${label}" style="${rootStyle(width, height, render.display ?? "inline-block")}" ` +
+    `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-shushi" role="img" aria-label="${escapeXml(label)}" style="${rootStyle(width, height, render.display ?? "inline-block")}" ` +
     `viewBox="0 0 ${fmt(width)} ${fmt(height)}" width="${fmt(width / FONT_SIZE)}em" height="${fmt(height / FONT_SIZE)}em" ` +
     `font-family="'Helvetica Neue', Arial, 'PingFang SC', sans-serif">` +
     guides +

@@ -33,6 +33,9 @@ function normalize(source: string): string {
 const TERM = /([+-]?)(\d*)([a-zA-Z]*)(?:\^(\d+))?/y;
 
 /** 解析一个多项式，返回系数与字母（没有字母时 letter 为 undefined）。 */
+/** 最高次数：系数数组按次数展开、乘法是平方复杂度，次数太大会卡住渲染。课本里远到不了这个次数【推论】。 */
+const MAX_DEGREE = 20;
+
 export function parsePoly(source: string): { coeffs: number[]; letter: string | undefined } {
   const text = normalize(source);
   if (text === "") throw new ExpressionError("多项式是空的");
@@ -51,6 +54,7 @@ export function parsePoly(source: string): { coeffs: number[]; letter: string | 
     if (letters === "" && m[4] !== undefined) throw new ExpressionError(`数字不能写次数：“${m[0]}”`);
     if (letters !== "") letter = letters;
     const deg = letters === "" ? 0 : Number(m[4] ?? "1");
+    if (deg > MAX_DEGREE) throw new ExpressionError(`次数 ${deg} 太大（最高 ${MAX_DEGREE} 次）`);
     const magnitude = m[2] === "" ? 1 : Number(m[2]);
     while (coeffs.length <= deg) coeffs.push(0);
     coeffs[deg] = coeffs[deg]! + (m[1] === "-" ? -magnitude : magnitude);

@@ -40,7 +40,13 @@ function findSplit(q: Quadratic): Split | undefined {
   return undefined;
 }
 
+/** 系数绝对值的上限：找因数要从 1 数到 |c|，太大会卡住渲染（与短除法、树状图的上限一致）。 */
+const MAX_COEFFICIENT = 1_000_000;
+
 function validate(q: Quadratic): void {
+  for (const value of [q.a, q.b, q.c]) {
+    if (Math.abs(value) > MAX_COEFFICIENT) throw new ExpressionError(`系数 ${value} 太大（上限 ${MAX_COEFFICIENT}）`);
+  }
   if (q.a < 0) throw new ExpressionError("二次项系数是负数，请先提出负号");
   if (q.c === 0) throw new ExpressionError("没有常数项，请先提出公因式");
   const g = gcd(gcd(q.a, q.b), q.c);

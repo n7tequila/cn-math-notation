@@ -15,6 +15,7 @@ describe("parseFormulaCommand：识别整个公式是不是一条本库命令", 
     expect(parseFormulaCommand(String.raw`\shushi[multiCarry, colorByDigit]{538\times26}`)).toEqual({
       kind: "command",
       family: "shushi",
+      name: "shushi",
       starred: false,
       options: "multiCarry, colorByDigit",
       body: String.raw`538\times26`,
@@ -25,6 +26,7 @@ describe("parseFormulaCommand：识别整个公式是不是一条本库命令", 
     expect(parseFormulaCommand(String.raw`\shushi*{ 7 4 \\ + 8 8 \\ \jin{1 1 ~} \\ \hline 1 6 2 }`)).toEqual({
       kind: "command",
       family: "shushi",
+      name: "shushi",
       starred: true,
       options: undefined,
       body: String.raw` 7 4 \\ + 8 8 \\ \jin{1 1 ~} \\ \hline 1 6 2 `,
@@ -33,7 +35,7 @@ describe("parseFormulaCommand：识别整个公式是不是一条本库命令", 
 
   test("前后空白、换行、命令与参数之间的空格都允许", () => {
     const r = parseFormulaCommand("\n  \\duanchu [result] {36, 48}\n");
-    expect(r).toEqual({ kind: "command", family: "duanchu", starred: false, options: "result", body: "36, 48" });
+    expect(r).toEqual({ kind: "command", family: "duanchu", name: "duanchu", starred: false, options: "result", body: "36, 48" });
   });
 
   test("英文别名归到同一个命令", () => {
@@ -53,7 +55,7 @@ describe("parseFormulaCommand：识别整个公式是不是一条本库命令", 
 
   test("转义的花括号不参与配对", () => {
     const r = parseFormulaCommand(String.raw`\dengshi*{a \} b}`);
-    expect(r).toEqual({ kind: "command", family: "dengshi", starred: true, options: undefined, body: String.raw`a \} b` });
+    expect(r).toEqual({ kind: "command", family: "dengshi", name: "dengshi", starred: true, options: undefined, body: String.raw`a \} b` });
   });
 
   test("和其他公式混写时报错，提示单独写", () => {

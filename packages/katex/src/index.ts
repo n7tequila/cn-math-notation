@@ -270,7 +270,7 @@ function registerDengshi(katex: KatexLike): void {
       numOptionalArgs: 1,
       argTypes: ["raw", "raw"],
       allowedInText: true,
-      handler: (context: { parser: { mode: string } }, args: RawArg[], optArgs: (RawArg | null)[]) => {
+      handler: (context: { parser: { mode: string; settings: object } }, args: RawArg[], optArgs: (RawArg | null)[]) => {
         let tex: string;
         try {
           tex = build(normalizeRaw(args[0]!.string), optArgs[0]?.string);
@@ -278,7 +278,9 @@ function registerDengshi(katex: KatexLike): void {
           if (e instanceof ExpressionError || e instanceof OptionError) throw new katex.ParseError(`${label}：${e.message}`);
           throw e;
         }
-        return { type: "ordgroup", mode: context.parser.mode, body: katex.__parse(tex, { throwOnError: true }) };
+        // 用当前公式的设置解析（调用方的 macros、trust、strict 等），只把报错改成抛出、由外层统一处理
+        const settings = { ...context.parser.settings, throwOnError: true };
+        return { type: "ordgroup", mode: context.parser.mode, body: katex.__parse(tex, settings) };
       },
     });
   define(DENGSHI_LAYOUT_FN, buildDengshiLayout, "\\dengshi*");

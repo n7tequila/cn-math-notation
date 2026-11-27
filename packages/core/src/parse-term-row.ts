@@ -73,7 +73,10 @@ function stripPrefix(tokens: readonly Token[]): Prefix {
       rest = rest.slice(1);
     } else if (tok?.t === "cmd" && tok.name === "chu") {
       const g = group(rest.slice(1), "\\chu");
-      divisor = prettyTerm(tokensText(g.inner));
+      const raw = tokensText(g.inner);
+      // 除数会写进 SVG 的文字与朗读文字，和格子一样只放行数字、字母、^次数、正负号
+      if (!TERM_CHARS.test(raw)) throw new LayoutSyntaxError(`\\chu{…} 里只能写除式（数字、字母、^次数、正负号）：“${raw}”`);
+      divisor = prettyTerm(raw);
       rest = g.rest;
     } else if (tok?.t === "cmd" && OPERATOR_COMMANDS[tok.name] !== undefined) {
       operator = OPERATOR_COMMANDS[tok.name];

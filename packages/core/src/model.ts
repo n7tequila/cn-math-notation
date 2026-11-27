@@ -27,6 +27,8 @@ export interface Cell {
   readonly marks: readonly CellMark[];
   readonly color?: string;
   readonly point?: PointMark;
+  /** 空隙小数点的颜色（直写里 \textcolor{…}{.}），不写时按 point 取黑色或标红。 */
+  readonly pointColor?: string;
 }
 
 export type Operator = "+" | "-" | "×" | "÷";

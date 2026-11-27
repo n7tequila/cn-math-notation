@@ -215,3 +215,10 @@ describe("命令名不与 KaTeX 0.19.1 自带的命令冲突", () => {
     });
   }
 });
+
+describe("\\dengshi 用调用方的 KaTeX 设置解析生成的 TeX", () => {
+  test("trust 设置传得进去（\\href 生成链接）", () => {
+    const out = katex.renderToString(String.raw`\dengshi*{\href{https://example.com}{x} \\ 2}`, { trust: true });
+    expect(out).toContain('href="https://example.com"');
+  });
+});

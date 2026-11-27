@@ -19,9 +19,19 @@ export function showsProcess(e: Expression, style: StyleOptions): boolean {
   return e.answer === undefined;
 }
 
+/**
+ * 算术写法里的字母：两个数字之间的 x / X 是乘号（43x37），答案与余数之间的 r / R 是余数记号（17r3），
+ * 不能因此当成多项式。
+ */
+const ARITHMETIC_LETTERS = /(?<=\d)\s*[xXrR]\s*(?=\d)/g;
+
+function isPolynomial(source: string): boolean {
+  return hasLetters(source.replace(/\\[a-zA-Z]+/g, "").replace(ARITHMETIC_LETTERS, ""));
+}
+
 export function buildSemantic(source: string, style: StyleOptions): Layout {
-  // 算式里有字母（命令名除外）就按多项式竖式画（维护者 2026-11-26 定沿用 \shushi）
-  if (hasLetters(source.replace(/\\[a-zA-Z]+/g, ""))) return polynomialLayout(source, style);
+  // 算式里有字母（命令名与算术写法除外）就按多项式竖式画（维护者 2026-11-26 定沿用 \shushi）
+  if (isPolynomial(source)) return polynomialLayout(source, style);
   const e = parseExpression(source);
   const process = showsProcess(e, style);
   switch (e.op) {

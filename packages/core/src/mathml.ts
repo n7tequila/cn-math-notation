@@ -17,6 +17,7 @@ import { DEFAULT_STYLE, type StyleOptions } from "./options.ts";
 import { hasLetters, termToMathML } from "./math-text.ts";
 import { toGapPoints } from "./point-style.ts";
 import { COLORS, describe } from "./render-svg.ts";
+import { escapeXml } from "./xml.ts";
 
 const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
 
@@ -32,9 +33,6 @@ export interface MathMLOptions {
   readonly carries?: "textbook" | "above";
 }
 
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 const EMPTY = "<mrow/>";
 const OPERATOR_TEXT: Readonly<Record<Operator, string>> = { "+": "+", "-": "−", "×": "×", "÷": "÷" };

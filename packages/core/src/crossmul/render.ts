@@ -6,6 +6,7 @@
 import { COLORS, FONT_SIZE, fmt, rootStyle, type RenderOptions, type RenderedSvg } from "../render-svg.ts";
 import { mathTextSvg as mathText } from "../math-text.ts";
 import type { CrossMulLayout, CrossTerm } from "./model.ts";
+import { escapeXml } from "../xml.ts";
 
 const CHAR_W = 13;
 const PAD = 8;
@@ -99,7 +100,7 @@ export function renderCrossMul(layout: CrossMulLayout, render: RenderOptions = {
   const svgWidth = contentRight + PAD;
   const label = describeCrossMul(layout);
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-shizi" role="img" aria-label="${label}" style="${rootStyle(svgWidth, height, render.display ?? "inline-block")}" ` +
+    `<svg xmlns="http://www.w3.org/2000/svg" class="cmn-shizi" role="img" aria-label="${escapeXml(label)}" style="${rootStyle(svgWidth, height, render.display ?? "inline-block")}" ` +
     `viewBox="0 0 ${fmt(svgWidth)} ${fmt(height)}" width="${fmt(svgWidth / FONT_SIZE)}em" height="${fmt(height / FONT_SIZE)}em" ` +
     `font-family="'Times New Roman', 'Songti SC', serif">${body.join("")}</svg>`;
   return { svg, width: svgWidth, height, widthEm: svgWidth / FONT_SIZE, heightEm: height / FONT_SIZE, label };

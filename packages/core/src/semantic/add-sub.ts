@@ -13,6 +13,7 @@ import {
   type Num,
 } from "./numbers.ts";
 import type { Expression } from "./parse-expr.ts";
+import { trimNum } from "./gap-point.ts";
 
 function places(e: Expression): number {
   return Math.max(e.a.frac.length, e.b.frac.length);
@@ -35,7 +36,8 @@ function trailingZeroCols(num: Num): Set<number> {
 }
 
 function resultRow(correct: Num, e: Expression, p: number, style: StyleOptions): Row {
-  if (e.answer !== undefined) return { kind: "digits", cells: answerCells(e.answer, correct) };
+  // 与乘除法一致：答案省略末尾的 0（4.6、5）不算错，比对前先去掉正确结果末尾的 0
+  if (e.answer !== undefined) return { kind: "digits", cells: answerCells(e.answer, trimNum(correct)) };
   const struck = style.strikeZero ? trailingZeroCols(correct) : new Set<number>();
   const cells: Cell[] = cellsOf(correct, { places: p, marksAt: (col) => (struck.has(col) ? ["hua"] : []) });
   return { kind: "digits", cells };
