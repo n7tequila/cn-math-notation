@@ -50,6 +50,7 @@ export async function texToSvg(tex: string, packages: readonly string[] = TEX_PA
   const error = ERROR_ATTR.exec(svg);
   if (error !== null) throw new RenderError(`TeX：${decodeEntities(error[1]!)}`);
   if (LABELED.test(svg)) throw new RenderError("出图不支持公式编号，请去掉 \\tag");
-  // 混写时本库嵌的图片换成内联 SVG（resvg 画嵌入图片时不带字体），再统一清理
-  return sanitizeMathJaxSvg(inlineEmbeddedSvg(svg));
+  // 先清理（属性值里的 < > 被转义），再在混写留的盒子里插入本库按原命令重画的 SVG（可信内容）。
+  // 反过来先插后清理时，属性值里未转义的 > 会让插入错位（2026-11-27 安全审查 C1、L1）。
+  return inlineEmbeddedSvg(sanitizeMathJaxSvg(svg));
 }

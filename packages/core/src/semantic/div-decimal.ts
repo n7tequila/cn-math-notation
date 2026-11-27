@@ -52,17 +52,17 @@ function plan(exp: Expansion | undefined, style: StyleOptions): Plan {
     return exactFits ? { mode: "exact" } : { mode: "round", digits: style.round + 1, keep: style.round };
   }
   if (exp !== undefined && exp.period === 0) return { mode: "exact" };
-  if (style.repeatDot) {
-    if (exp === undefined) throw new ExpressionError(`循环节太长（超过 ${MAX_PLACES} 位），不能打循环点`);
+  if (style.repeatDot === true) {
+    if (exp === undefined) throw new ExpressionError(`商的小数部分超过 ${MAX_PLACES} 位还没有循环或除尽，不能打循环点`);
     const length = exp.pre + exp.period;
-    if (style.places !== undefined && style.places < length) {
-      throw new ExpressionError(`places=${style.places} 不够写出一个循环节（要 ${length} 位）`);
+    if (style.places !== undefined && style.places !== length) {
+      throw new ExpressionError(`repeatDot 只除一个循环节（${length} 位），places=${style.places} 对不上；去掉 places 即可`);
     }
-    return { mode: "recurring", digits: style.places ?? length, cycle: exp };
+    return { mode: "recurring", digits: length, cycle: exp };
   }
   if (style.places !== undefined) return { mode: "recurring", digits: style.places };
   if (exp === undefined) {
-    throw new ExpressionError(`循环节太长（超过 ${MAX_PLACES} 位），请用 places 写明除到第几位小数`);
+    throw new ExpressionError(`商的小数部分超过 ${MAX_PLACES} 位还没有循环或除尽（循环节太长），请用 places 写明除到第几位小数`);
   }
   return { mode: "recurring", digits: Math.max(MIN_RECURRING_PLACES, exp.pre + exp.period) };
 }
@@ -211,7 +211,7 @@ function build(dividend: Dividend, divisor: bigint, division: Division, style: S
 /** 商的格子：循环小数加省略号或循环点。 */
 function decorateQuotient(cells: Cell[], p: Plan, places: number, style: StyleOptions): Cell[] {
   if (p.mode !== "recurring") return cells;
-  if (style.repeatDot && p.cycle !== undefined) {
+  if (style.repeatDot === true && p.cycle !== undefined) {
     const { pre, period } = p.cycle;
     const dotted = new Set([places - (pre + 1), places - (pre + period)]);
     return cells.map((c) => (dotted.has(c.col) ? { ...c, marks: [...c.marks, "xun"] } : c));

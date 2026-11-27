@@ -2,12 +2,43 @@
  * 把本库的 SVG 包成 Typora 认得的 `<mjx-container jax="SVG">`：
  * Typora 的样式（居中、边距、导出时的缓存）都挂在这个元素上。
  */
-import { embedMathML, inlineEmbeddedSvg, type RenderedSvg } from "@cn-math-notation/core";
+import { embeddedMathMLFor, embeddedSvgFor, type RenderedSvg } from "@cn-math-notation/core";
 import type { ElementFactory } from "./mathjax-patch.ts";
 
 const ERROR_COLOR = "#cc0000";
-/** 本库空白盒子携带原命令的属性前缀（core 的 mathjax-embed.ts）；伪造的也由 core 去掉。 */
-export const EMBED_MARKER = "data-cmn-";
+/** 本库空白盒子携带原命令的属性（core 的 mathjax-embed.ts）。 */
+const DATA_TEX = "data-cmn-tex";
+/** 本库用过或可能被伪造的 data 属性：一律去掉。 */
+const CMN_ATTRS = ["data-cmn-tex", "data-cmn-svg"] as const;
+const CMN_SELECTOR = CMN_ATTRS.map((a) => `[${a}]`).join(",");
+
+/**
+ * 混写：直接改 DOM，不把序列化的字符串整体赋回去。系统 WebKit 序列化属性值时不转义 >，
+ * 字符串替换会错位，把攻击者写在属性值里的元素放出来（2026-11-27 安全审查 C1）。
+ * 这里只读属性值、删属性，插入的只有本库按原命令重新画的内容。
+ */
+function takeCommand(node: Element): string | null {
+  const data = node.getAttribute(DATA_TEX);
+  for (const attr of CMN_ATTRS) node.removeAttribute(attr);
+  return data;
+}
+
+function inlineSvgBoxes(svg: Element): void {
+  for (const g of svg.querySelectorAll(CMN_SELECTOR)) {
+    const data = takeCommand(g);
+    const content = data === null ? "" : embeddedSvgFor(data);
+    if (content !== "") g.insertAdjacentHTML("afterbegin", content);
+  }
+}
+
+/** 辅助 MathML（给读屏软件）：盒子换成本库的 MathML，否则读到的只是空白。 */
+function inlineMathMLBoxes(assistive: Element): void {
+  for (const row of assistive.querySelectorAll(CMN_SELECTOR)) {
+    const data = takeCommand(row);
+    const mathml = data === null ? undefined : embeddedMathMLFor(data);
+    if (mathml !== undefined) row.innerHTML = mathml;
+  }
+}
 
 function container(doc: Document, display: boolean): HTMLElement {
   const el = doc.createElement("mjx-container");
@@ -37,14 +68,9 @@ export function createElementFactory(doc: Document): ElementFactory {
     inline(el: Element): Element {
       // MathJax 排出的 <mjx-container> 里只有一个 <svg>；在本库留的空白盒子里插入内联 SVG（跟随文字颜色）
       const svg = el.querySelector?.("svg");
-      if (svg !== null && svg !== undefined && svg.outerHTML.includes(EMBED_MARKER)) {
-        svg.outerHTML = inlineEmbeddedSvg(svg.outerHTML);
-      }
-      // Typora 开了辅助 MathML（给读屏软件）：盒子换成本库的 MathML，否则读到的只是空白
+      if (svg) inlineSvgBoxes(svg);
       const assistive = el.querySelector?.("mjx-assistive-mml");
-      if (assistive !== null && assistive !== undefined && assistive.innerHTML.includes(EMBED_MARKER)) {
-        assistive.innerHTML = embedMathML(assistive.innerHTML);
-      }
+      if (assistive) inlineMathMLBoxes(assistive);
       return el;
     },
   };

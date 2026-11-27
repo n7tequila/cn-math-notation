@@ -33,7 +33,7 @@ export function dengshiTex(lines: readonly string[], opts?: DengshiOptions): str
 
 /** 语义式：只写算式，按运算顺序逐步化简，每一步一行。返回每行的 TeX（不含等号）。 */
 export function dengshiSteps(expression: string, opts: DengshiOptions = DEFAULT_DENGSHI): string[] {
-  const arith = { negative: opts.negative };
+  const arith = { negative: opts.negative !== false };
   return simplifySteps(parseArith(expression, arith), arith).map((step) => toTex(step));
 }
 

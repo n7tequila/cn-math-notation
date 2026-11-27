@@ -179,3 +179,37 @@ describe("embedMathML：复制为 MathML 时把嵌的图片换成本库的 MathM
     expect(out.match(/<math/g)?.length).toBe(1);
   });
 });
+
+describe("审查发现（2026-11-27 第二轮）", () => {
+  test("embedMathML 遇到非法 base64 不抛异常，原样保留", () => {
+    const mml = '<math><mrow data-cmn-tex="***"><mspace></mspace></mrow></math>';
+    expect(embedMathML(mml)).toBe(mml);
+  });
+});
+
+describe("安全审查（2026-11-27 第二轮）", () => {
+  const b64 = (t: string) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
+  /** 去掉所有引号里的内容后，看标签外有没有多出元素。 */
+  const outside = (s: string) => s.replace(/"[^"]*"/g, '""');
+
+  test("C1：属性值里有不转义的 >（系统 WebKit 的序列化），插入的 SVG 不会错位、放出攻击者的元素", () => {
+    const svg = `<svg><g data-mml-node="mrow" data-cmn-tex="${b64("\\shushi{1+2}")}" data-mjx-x=">X<img src=x onerror=alert(1)>" class="cmn-embed"><g data-mml-node="mspace"></g></g></svg>`;
+    const out = inlineEmbeddedSvg(svg);
+    expect(outside(out)).not.toContain("<img");
+    expect(out).toContain(`data-mjx-x=">X<img src=x onerror=alert(1)>"`);
+    expect(out).toContain(">3</text>");
+    expect(out).not.toContain("data-cmn-");
+  });
+
+  test("C1（MathML 同款写法）：embedMathML 的标签匹配也认引号", () => {
+    const mml = `<math><mrow data-cmn-tex="${b64("\\shushi{1+2}")}" data-mjx-x=">X<img src=x onerror=alert(1)>"><mspace width="1em"></mspace></mrow></math>`;
+    const out = embedMathML(mml);
+    expect(outside(out)).not.toContain("<img");
+    expect(out).toContain("<mstack");
+  });
+
+  test("H1：语义式算式里的数最多 30 位", () => {
+    expect(translateFormula(`\\shushi{${"9".repeat(31)}×2}`).kind).toBe("error");
+    expect(translateFormula(`\\shushi{${"9".repeat(30)}×2}`).kind).toBe("svg");
+  });
+});

@@ -8,14 +8,15 @@
  * negative=false 时不允许。题目里写的数照原样写回（3.50 仍是 3.50），算出来的数去掉末尾的 0。
  */
 import { ExpressionError } from "../semantic/numbers.ts";
+import { MAX_DIGITS } from "../semantic/parse-expr.ts";
 import { decDiv, decFromText, decText, isNegative, type Dec } from "./decimal.ts";
 
 export type BinOp = "+" | "-" | "×" | "÷";
 export type Bracket = "(" | "[";
 
 export type Node =
-  /** text：题目里写的原样（算出来的数没有）；bracketed：题目里给这个负数加了括号，照原样写回。 */
-  | { readonly k: "num"; readonly v: Dec; readonly text?: string; readonly bracketed?: boolean }
+  /** text：题目里写的原样（算出来的数没有）；bracketed：题目里给这个负数加了括号（哪种括号），照原样写回。 */
+  | { readonly k: "num"; readonly v: Dec; readonly text?: string; readonly bracketed?: Bracket }
   | { readonly k: "op"; readonly op: BinOp; readonly l: Node; readonly r: Node }
   | { readonly k: "paren"; readonly br: Bracket; readonly inner: Node };
 
@@ -44,6 +45,10 @@ function tokenize(source: string): Token[] {
     const hit = SYMBOLS.find(([re]) => re.test(rest));
     if (hit === undefined) throw new ExpressionError(`不认识的符号：“${rest}”`);
     const m = hit[0].exec(rest)![0];
+    const digits = m.replace(".", "").length;
+    if (/^\d/.test(m) && digits > MAX_DIGITS) {
+      throw new ExpressionError(`数太长了（${digits} 位），每个数最多 ${MAX_DIGITS} 位`);
+    }
     tokens.push(hit[1](m));
     rest = rest.slice(m.length);
   }
@@ -86,7 +91,8 @@ export function parseArith(source: string, opts: ArithOptions = DEFAULT_ARITH): 
       }
       pos += 1;
       // 括号只包着一个负数（如 (-3)）：这是负数的写法，不是要先算的括号
-      if (inner.k === "num" && isNegative(inner.v)) return { ...inner, bracketed: tok.br === "(" };
+      // 按写出来的样子判断（-0 的值不是负数，但写法是负数）
+      if (inner.k === "num" && looksNegative(inner)) return { ...inner, bracketed: tok.br };
       return { k: "paren", br: tok.br, inner };
     }
     throw new ExpressionError(tok.t === "close" ? "多了一个右括号" : "运算符前面少了一个数");
@@ -150,6 +156,10 @@ function rawCompute(op: BinOp, a: Dec, b: Dec): Dec {
   }
 }
 
+function looksNegative(n: Extract<Node, { k: "num" }>): boolean {
+  return n.text === undefined ? isNegative(n.v) : n.text.startsWith("-");
+}
+
 function containsParen(n: Node): boolean {
   return n.k === "paren" || (n.k === "op" && (containsParen(n.l) || containsParen(n.r)));
 }
@@ -207,9 +217,10 @@ export function toTex(n: Node, leading = true): string {
   switch (n.k) {
     case "num": {
       const text = n.text ?? decText(n.v);
-      if (n.bracketed === true || (isNegative(n.v) && !leading)) return `(${text})`;
+      if (n.bracketed === "[") return `[${text}]`;
+      if (n.bracketed === "(" || (looksNegative(n) && !leading)) return `(${text})`;
       // aligned 第二列开头有空组，裸的 "-" 会排成减号；包一层花括号排成负号
-      return isNegative(n.v) ? `{${text}}` : text;
+      return looksNegative(n) ? `{${text}}` : text;
     }
     case "op":
       return `${toTex(n.l, leading)}${OP_TEX[n.op]}${toTex(n.r, false)}`;

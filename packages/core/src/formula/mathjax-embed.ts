@@ -58,7 +58,7 @@ function readCommand(parser: MathJaxTexParser, name: string): string {
 function macro(TexError: MathJaxTexErrorClass): MathJaxMacro {
   return (parser, name) => {
     const tex = readCommand(parser, name);
-    const r = translateFormula(tex);
+    const r = translateCached(tex);
     switch (r.kind) {
       case "svg": {
         const { widthEm, heightEm } = r.rendered;
@@ -92,14 +92,33 @@ export function createMathJaxMacros(TexError: MathJaxTexErrorClass): Record<stri
   return Object.fromEntries(FORMULA_COMMAND_NAMES.map((name) => [name, handler]));
 }
 
-/** 本库的盒子，或带着 data-cmn-* 属性的任何 <g>（伪造的也要把属性去掉）。 */
-const EMBED_GROUP = /<g\b([^>]*\bdata-cmn-(?:svg|tex)="[^"]*"[^>]*)>/g;
-const ATTR = /([\w:-]+)="([^"]*)"/g;
+/**
+ * 标签与属性的匹配都认引号：系统 WebKit 序列化属性值时不转义 >，[^>]* 会在属性值中间断开，
+ * 插入的内容随之错位，把属性值里的文字放出来变成元素（2026-11-27 安全审查 C1）。
+ */
+const TAG_BODY = String.raw`((?:[^>"]|"[^"]*")*)`;
+const G_TAG = new RegExp(String.raw`<g\b${TAG_BODY}>`, "g");
+const MROW_BOX = new RegExp(
+  String.raw`<mrow\b${TAG_BODY}>\s*<mspace\b(?:[^>"]|"[^"]*")*?(?:\/>|>\s*<\/mspace>)\s*<\/mrow>`,
+  "g",
+);
+const ATTR = /([^\s="]+)(?:="([^"]*)")?/g;
 const ROOT = /^<svg\b([^>]*)>/;
-const DATA_ATTRS = /\sdata-cmn-(?:svg|tex)="[^"]*"/g;
+const CMN_ATTR = /^data-cmn-/;
+
+/** 标签里的属性，按出现顺序；值保持序列化后的原样（不解码实体）。 */
+function attrList(body: string): [string, string | undefined][] {
+  return [...body.matchAll(ATTR)].map((m) => [m[1]!, m[2]]);
+}
 
 function attrsOf(source: string): Map<string, string> {
-  return new Map([...source.matchAll(ATTR)].map((m) => [m[1]!, m[2]!]));
+  return new Map(attrList(source).map(([k, v]) => [k, v ?? ""]));
+}
+
+/** 去掉 data-cmn-* 属性后重新拼出标签开头。 */
+function rebuild(name: string, body: string): string {
+  const kept = attrList(body).filter(([k]) => !CMN_ATTR.test(k));
+  return `<${name}${kept.map(([k, v]) => (v === undefined ? ` ${k}` : ` ${k}="${v}"`)).join("")}>`;
 }
 
 /** 精确尺寸按 viewBox 算（根元素上的 em 尺寸取过整）：本库 SVG 的 1em = FONT_SIZE 个 viewBox 单位。 */
@@ -128,34 +147,66 @@ function boxContent(svg: string): string {
   return `<g transform="translate(0 ${up}) matrix(1 0 0 -1 0 0)">${open}${svg.slice(root[0].length)}</g>`;
 }
 
-/** data-cmn-tex → 本库重新画的 SVG；不是一条合法的本库命令时返回空串。 */
-function redraw(data: string): string {
-  let tex: string;
-  try {
-    tex = fromBase64(data);
-  } catch {
-    return "";
-  }
+/** 同一条命令只渲染一次：宏里量尺寸、排完后重画都用它（2026-11-27 安全审查 H1）。 */
+const CACHE_LIMIT = 64;
+const cache = new Map<string, ReturnType<typeof translateFormula>>();
+
+function translateCached(tex: string): ReturnType<typeof translateFormula> {
+  const hit = cache.get(tex);
+  if (hit !== undefined) return hit;
   const r = translateFormula(tex);
+  if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+  cache.set(tex, r);
+  return r;
+}
+
+function decodeCommand(data: string): string | undefined {
+  try {
+    return fromBase64(data);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * data-cmn-tex 的值 → 盒子里该放的内联 SVG（本库按原命令重新画）；不是一条合法的本库命令时返回空串。
+ * 不信任任何携带过来的 SVG：Typora 的 \data{…} 能伪造 data 属性。给直接操作 DOM 的调用方（Typora 插件）用。
+ */
+export function embeddedSvgFor(data: string): string {
+  const tex = decodeCommand(data);
+  if (tex === undefined) return "";
+  const r = translateCached(tex);
   return r.kind === "svg" ? boxContent(r.rendered.svg) : "";
 }
 
-/** MathJax SVG 输出里本库的空白盒子 → 按原命令重新画、插入内联 SVG，去掉携带数据的属性；别的内容原样不动。 */
+/** data-cmn-tex 的值 → 本库的 MathML（不含 <math> 外壳）；不是合法的本库命令时返回 undefined。 */
+export function embeddedMathMLFor(data: string): string | undefined {
+  const tex = decodeCommand(data);
+  if (tex === undefined) return undefined;
+  const r = translateFormulaMathML(tex);
+  return r.kind === "mathml" ? r.mathml.replace(MATH_WRAPPER, "") : undefined;
+}
+
+/**
+ * MathJax SVG 输出（字符串）里本库的空白盒子 → 按原命令重新画、插入内联 SVG，去掉 data-cmn-* 属性。
+ * 给拿到的是字符串的调用方（出图服务）用；调用前先清理一遍输出，属性值里就不会有未转义的 < >。
+ */
 export function inlineEmbeddedSvg(svg: string): string {
-  return svg.replace(EMBED_GROUP, (_whole, raw: string) => {
-    const data = /\bdata-cmn-tex="([^"]*)"/.exec(raw)?.[1];
-    return `<g${raw.replace(DATA_ATTRS, "")}>${data === undefined ? "" : redraw(data)}`;
+  return svg.replace(G_TAG, (whole, body: string) => {
+    const attrs = attrList(body);
+    if (!attrs.some(([k]) => CMN_ATTR.test(k))) return whole;
+    const data = attrs.find(([k]) => k === "data-cmn-tex")?.[1];
+    return rebuild("g", body) + (data === undefined ? "" : embeddedSvgFor(data));
   });
 }
 
-const EMBEDDED_ROW =
-  /<mrow\b[^>]*?\bdata-cmn-tex="([^"]*)"[^>]*>\s*<mspace\b[^>]*?(?:\/>|>\s*<\/mspace>)\s*<\/mrow>/g;
 const MATH_WRAPPER = /^<math\b[^>]*>|<\/math>$/g;
 
 /** MathJax 的 MathML 输出里本库的盒子 → 本库的 MathML（竖式为 mstack，其他写法为朗读文字）。 */
 export function embedMathML(mml: string): string {
-  return mml.replace(EMBEDDED_ROW, (whole, data: string) => {
-    const r = translateFormulaMathML(fromBase64(data));
-    return r.kind === "mathml" ? `<mrow>${r.mathml.replace(MATH_WRAPPER, "")}</mrow>` : whole;
+  return mml.replace(MROW_BOX, (whole, body: string) => {
+    const data = attrList(body).find(([k]) => k === "data-cmn-tex")?.[1];
+    const inner = data === undefined ? undefined : embeddedMathMLFor(data);
+    return inner === undefined ? whole : `<mrow>${inner}</mrow>`;
   });
 }

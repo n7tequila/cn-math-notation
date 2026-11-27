@@ -35,8 +35,8 @@ export interface ElementFactory {
 }
 
 export interface PatchOptions {
-  /** 已往 MathJax 里注册了本库命令，可以混写。 */
-  readonly mixed?: boolean;
+  /** 已往 MathJax 里注册了本库命令，可以混写；传函数时每次渲染现查（注册可能稍后才成功）。 */
+  readonly mixed?: boolean | (() => boolean);
 }
 
 const PATCHED = Symbol.for("cn-math-notation.typora.patched");
@@ -76,7 +76,8 @@ export function patchMathJax(mj: MathJaxLike, factory: ElementFactory, patchOpti
   if (tex2svg === undefined || tex2svgPromise === undefined || tex2mml === undefined) return () => {};
   if (isPatched(mj)) return () => {};
 
-  const mixed = patchOptions.mixed === true;
+  const option = patchOptions.mixed;
+  const canMix = (): boolean => (typeof option === "function" ? option() : option === true);
   const MIXED = { mixed: true } as const;
 
   const toElement = (
@@ -88,7 +89,7 @@ export function patchMathJax(mj: MathJaxLike, factory: ElementFactory, patchOpti
       case "pass":
         return undefined;
       case "mixed":
-        return mixed ? MIXED : factory.error(MIXED_MESSAGE, isDisplay(options));
+        return canMix() ? MIXED : factory.error(MIXED_MESSAGE, isDisplay(options));
       case "tex":
         return { tex: r.tex };
       case "svg":
@@ -116,7 +117,7 @@ export function patchMathJax(mj: MathJaxLike, factory: ElementFactory, patchOpti
       case "pass":
         return tex2mml(tex, options);
       case "mixed":
-        return mixed ? embedMathML(tex2mml(tex, options)) : mmlError(MIXED_MESSAGE);
+        return canMix() ? embedMathML(tex2mml(tex, options)) : mmlError(MIXED_MESSAGE);
       case "tex":
         return tex2mml(r.tex, options);
       case "mathml":

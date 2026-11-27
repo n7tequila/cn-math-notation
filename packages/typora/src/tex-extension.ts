@@ -31,19 +31,22 @@ export interface MathJaxRuntime {
 }
 
 const MAP_NAME = "cmn-macros";
-const REGISTERED = Symbol.for("cn-math-notation.typora.texExtension");
+/**
+ * 已注册过的 TeX 输入（按它的处理器对象记）。Typora 重新加载 MathJax 时 TeX 输入会换新，
+ * 即使 window.MathJax 还是同一个对象，也要重新注册。
+ */
+const registered = new WeakSet<object>();
 
-/** 注册本库命令；已注册过（同一个 MathJax）直接返回 true。 */
+/** 注册本库命令；当前 TeX 输入已注册过时直接返回 true。 */
 export function registerTexExtension(mj: MathJaxRuntime): boolean {
-  const marked = mj as Record<symbol, boolean | undefined>;
-  if (marked[REGISTERED] === true) return true;
   const CommandMap = mj._?.input?.tex?.TokenMap?.CommandMap;
   const TexError = mj._?.input?.tex?.TexError?.default;
   const tex = mj.startup?.document?.inputJax?.find((jax) => jax.name === "TeX");
   const handlers = tex?.parseOptions?.handlers;
   if (CommandMap === undefined || TexError === undefined || handlers === undefined) return false;
+  if (registered.has(handlers)) return true;
   new CommandMap(MAP_NAME, createMathJaxMacros(TexError));
   handlers.add({ macro: [MAP_NAME] }, {});
-  marked[REGISTERED] = true;
+  registered.add(handlers);
   return true;
 }

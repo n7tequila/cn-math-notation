@@ -171,3 +171,19 @@ describe("生成的 TeX（2026-11-27）", () => {
     expect(dengshiSteps("2×(3-5)")[1]).toBe("2\\times (-2)");
   });
 });
+
+describe("审查发现（2026-11-27 第二轮）", () => {
+  test("-0 也是“写成负数的数”：括号照原样保留，不多算一步", () => {
+    expect(steps("5×(-0)")).toEqual(["5×(-0)", "0"]);
+    expect(dengshiSteps("-0+2")[0]).toBe("{-0}+2");
+  });
+  test("只包着一个负数的中括号照原样写回", () => {
+    expect(steps("[-3]+2")[0]).toBe("[-3]+2");
+    expect(steps("5×[-3]")[0]).toBe("5×[-3]");
+  });
+});
+
+test("递等式里的数最多 30 位（2026-11-27 安全审查 H1）", () => {
+  expect(() => dengshiSteps(`${"9".repeat(31)}+1`)).toThrow(/最多 30 位/);
+  expect(dengshiSteps(`${"9".repeat(30)}+1`).at(-1)).toBe("1" + "0".repeat(30));
+});

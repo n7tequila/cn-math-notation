@@ -76,10 +76,11 @@ interface Factor {
 function factor(n: Num): Factor {
   if (n.frac !== "") {
     const digits = (n.int + n.frac).replace(/^0+(?=\d)/, "");
-    const core = digits.replace(/0+$/, "");
-    if (core === "") return { full: n, core: { int: "0", frac: "" }, zeros: 0, places: n.frac.length }; // 因数是 0
-    const zeros = Math.min(digits.length - core.length, n.frac.length - n.frac.replace(/0+$/, "").length);
-    return { full: n, core: { int: core, frac: "" }, zeros, places: n.frac.length };
+    if (/^0+$/.test(digits)) return { full: n, core: { int: "0", frac: "" }, zeros: 0, places: n.frac.length }; // 因数是 0
+    // 只甩出小数部分末尾的 0；整数部分末尾的 0（30.0 的 3 后面那个）照常参与计算（审查 2026-11-27）
+    const fracZeros = n.frac.length - n.frac.replace(/0+$/, "").length;
+    const core = digits.slice(0, digits.length - fracZeros);
+    return { full: n, core: { int: core, frac: "" }, zeros: fracZeros, places: n.frac.length };
   }
   const core = n.int.replace(/0+$/, "");
   if (core === "") return { full: n, core: n, zeros: 0, places: 0 }; // 因数是 0

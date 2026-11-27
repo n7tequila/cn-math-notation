@@ -265,3 +265,24 @@ describe("加减法的小数点（维护者 2026-11-26 定：默认不占列，p
     expect(layoutToMathML(layout, style("pointColumn"))).toContain("<mn>4</mn><mn>.</mn><mn>5</mn>");
   });
 });
+
+describe("审查发现（2026-11-27 第二轮）", () => {
+  /** 部分积（按列号移位后）之和必须等于积。 */
+  const partialSum = (expr: string, opts?: string): [bigint, bigint] => {
+    const layout = build(expr, opts);
+    const digitsRows = layout.rows.filter((r): r is Extract<Row, { kind: "digits" }> => r.kind === "digits");
+    const value = (row: Extract<Row, { kind: "digits" }>) =>
+      row.cells
+        .filter((c) => c.content.kind === "digit")
+        .reduce((sum, c) => sum + BigInt((c.content as { text: string }).text) * 10n ** BigInt(c.col), 0n);
+    const parts = digitsRows.slice(2, -1);
+    return [parts.reduce((s, r) => s + value(r), 0n), value(digitsRows.at(-1)!)];
+  };
+  test("整数部分以 0 结尾、小数部分全是 0 的因数（30.0、100.00）：部分积之和等于积", () => {
+    for (const [expr, opts] of [["30.0×12"], ["12×30.0"], ["30.00×43"], ["300.0×12", "mode=compact"], ["70.00×111.35"]] as [string, string?][]) {
+      const [sum, product] = partialSum(expr, opts);
+      expect(sum).toBe(product);
+    }
+    expect(shape(build("30.0×12")).slice(2, 5)).toEqual(["---", "60@1", "30@2"]);
+  });
+});

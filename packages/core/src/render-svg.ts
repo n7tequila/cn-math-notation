@@ -267,6 +267,15 @@ function drawGuides(geo: Geometry, top: number, bottom: number): string {
     .join("");
 }
 
+/** 打了循环点的商：朗读时说出循环节（循环点在首尾两位上）。 */
+function cycleNote(cells: readonly Cell[]): string {
+  const sorted = [...cells].sort((a, b) => b.col - a.col);
+  const dotted = sorted.map((c, i) => (c.marks.includes("xun") ? i : -1)).filter((i) => i >= 0);
+  if (dotted.length === 0) return "";
+  const cycle = sorted.slice(dotted[0], dotted.at(-1)! + 1).map((c) => (c.content.kind === "digit" ? c.content.text : ""));
+  return `（循环节 ${cycle.join("")}）`;
+}
+
 export function describe(layout: Layout): string {
   const words: Record<Operator, string> = { "+": "加", "-": "减", "×": "乘", "÷": "除以", "≈": "约等于" };
   const lines = layout.rows.flatMap((row) => {
@@ -285,7 +294,7 @@ export function describe(layout: Layout): string {
       })
       .join("");
     if (row.divisor !== undefined) return [`${digits} 除以 ${row.divisor}`];
-    if (row.quotient) return [`商 ${digits}`];
+    if (row.quotient) return [`商 ${digits}${cycleNote(row.cells)}`];
     return [row.operator === undefined ? digits : `${words[row.operator]} ${digits}`];
   });
   return `竖式：${lines.join("，")}`;

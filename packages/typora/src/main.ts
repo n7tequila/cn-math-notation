@@ -19,6 +19,8 @@ export default class CnMathNotationPlugin extends pluginBase() {
   private restore: (() => void) | undefined;
   private startedAt = 0;
   private warnedMissing = false;
+  private mixed = false;
+  private warnedMixed = false;
 
   override onload(): void {
     this.startedAt = Date.now();
@@ -29,17 +31,28 @@ export default class CnMathNotationPlugin extends pluginBase() {
 
   private check(): void {
     const mj = currentMathJax();
-    if (mj !== undefined && isPatched(mj)) return;
+    if (mj !== undefined && isPatched(mj)) {
+      // 混写扩展可能第一次没注册上（MathJax 还没初始化完），之后每次检查都再试，注册成功后立即可用
+      this.tryRegister(mj);
+      return;
+    }
     if (mj === undefined || mj.tex2svg === undefined || mj.tex2svgPromise === undefined || mj.tex2mml === undefined) {
       this.warnIfMissingTooLong();
       return;
     }
-    const mixed = registerTexExtension(mj as MathJaxRuntime);
-    if (!mixed) console.warn(`${LOG_PREFIX} 没能往 MathJax 里注册本库命令（可能是 Typora 升级后内部接口变了）；本库命令仍可单独写成一个公式。`);
-    this.restore = patchMathJax(mj, createElementFactory(document), { mixed });
+    this.tryRegister(mj);
+    this.restore = patchMathJax(mj, createElementFactory(document), { mixed: () => this.mixed });
     if (!refreshAllMath(mentionsFormulaCommand)) {
       console.warn(`${LOG_PREFIX} 没有找到 Typora 的公式刷新入口（可能是 Typora 升级后内部接口变了）；已打开的公式要编辑一下才会重画。`);
     }
+  }
+
+  /** 往当前 MathJax 注册混写用的本库命令；失败时只警告一次，之后照常重试。 */
+  private tryRegister(mj: object): void {
+    this.mixed = registerTexExtension(mj as MathJaxRuntime);
+    if (this.mixed || this.warnedMixed) return;
+    this.warnedMixed = true;
+    console.warn(`${LOG_PREFIX} 没能往 MathJax 里注册本库命令（可能是 Typora 升级后内部接口变了）；本库命令仍可单独写成一个公式。`);
   }
 
   private warnIfMissingTooLong(): void {

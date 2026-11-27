@@ -150,6 +150,15 @@ describe("registerTexExtension：往 Typora 的 MathJax 里注册本库命令", 
     expect(added).toEqual([{ macro: [maps[0]!.name] }]);
   });
 
+  test("MathJax 重新加载、换了新的 TeX 输入（window.MathJax 仍是同一个对象）时重新注册", () => {
+    const { mj, added } = fakeRuntime();
+    expect(registerTexExtension(mj)).toBe(true);
+    const fresh = { name: "TeX", parseOptions: { handlers: { add: (h: unknown) => added.push(h) } } };
+    (mj.startup.document as { inputJax: unknown[] }).inputJax = [fresh];
+    expect(registerTexExtension(mj)).toBe(true);
+    expect(added).toHaveLength(2);
+  });
+
   test("找不到内部接口时返回 false（不抛异常）", () => {
     expect(registerTexExtension({})).toBe(false);
     const { mj } = fakeRuntime();
@@ -158,26 +167,24 @@ describe("registerTexExtension：往 Typora 的 MathJax 里注册本库命令", 
   });
 });
 
-describe("createElementFactory().inline", () => {
-  test("认得 core 留的空白盒子（标记与 core 一致），替换后不留携带数据的属性", async () => {
-    const { createMathJaxMacros, inlineEmbeddedSvg } = await import("@cn-math-notation/core");
-    const { EMBED_MARKER } = await import("../src/elements.ts");
-    const pushed: { attrs: Record<string, string> }[] = [];
-    const parser = {
-      string: "{74+88}",
-      i: 0,
-      GetStar: () => false,
-      GetBrackets: () => undefined,
-      GetArgument() {
-        this.i = this.string.length;
-        return "74+88";
-      },
-      create: (_k: string, _t: string, _c: unknown[] = [], attrs: Record<string, string> = {}) => ({ attrs }),
-      Push: (n: unknown) => pushed.push(n as { attrs: Record<string, string> }),
-    };
-    createMathJaxMacros(class extends Error {}).shushi!(parser, "\\shushi");
-    const svg = `<svg><g class="cmn-embed" data-cmn-tex="${pushed[0]!.attrs["data-cmn-tex"]}"><g></g></g></svg>`;
-    expect(svg).toContain(EMBED_MARKER);
-    expect(inlineEmbeddedSvg(svg)).not.toContain(EMBED_MARKER);
+describe("core 给 Typora 的 DOM 版接口", () => {
+  test("embeddedSvgFor / embeddedMathMLFor：按原命令重新画；不是合法命令时为空", async () => {
+    const { embeddedSvgFor, embeddedMathMLFor } = await import("@cn-math-notation/core");
+    const b64 = (t: string) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
+    expect(embeddedSvgFor(b64("\\shushi{1+2}"))).toContain(">3</text>");
+    expect(embeddedSvgFor(b64("<img src=x onerror=alert(1)>"))).toBe("");
+    expect(embeddedSvgFor("***")).toBe("");
+    expect(embeddedMathMLFor(b64("\\shushi{1+2}"))).toContain("<mstack");
+    expect(embeddedMathMLFor("***")).toBeUndefined();
   });
+});
+
+test("混写开关可以是函数：注册稍后成功时立即生效", () => {
+  const { mj } = fakeMathJax();
+  let registered = false;
+  patchMathJax(mj, factory, { mixed: () => registered });
+  const MIXED_TEX = String.raw`x+\shushi{1+1}`;
+  expect((mj.tex2svg!(MIXED_TEX) as unknown as { error?: string }).error).toContain("单独");
+  registered = true;
+  expect(mj.tex2svg!(MIXED_TEX)).toEqual({ inlined: { mathjax: MIXED_TEX } } as never);
 });

@@ -27,6 +27,18 @@ const OPERATORS: readonly [RegExp, ArithOperator][] = [
 
 const NUMBER = /^\d+(?:\.\d+)?/;
 
+/**
+ * 每个数最多几位（整数与小数部分合计）【推论】：课本里的数远到不了这么长；不设上限时，
+ * 嵌在公式里反复展开的超长乘法能让出图服务耗尽内存（2026-11-27 安全审查 H1）。
+ */
+export const MAX_DIGITS = 30;
+
+function checkedNum(text: string): Num {
+  const digits = text.replace(".", "").length;
+  if (digits > MAX_DIGITS) throw new ExpressionError(`数太长了（${digits} 位），每个数最多 ${MAX_DIGITS} 位`);
+  return parseNum(text);
+}
+
 export function parseExpression(source: string): Expression {
   // KaTeX 会把 ~ 等宏展开；语义式里不需要空白
   let rest = source.replace(/\\nobreakspace|~|\s+/g, "");
@@ -39,19 +51,19 @@ export function parseExpression(source: string): Expression {
     return m[0];
   };
 
-  const a = parseNum(take(NUMBER, "数字"));
+  const a = checkedNum(take(NUMBER, "数字"));
   const opEntry = OPERATORS.find(([re]) => re.test(rest));
   if (opEntry === undefined) throw new ExpressionError(`这里应该是 + − × ÷ 之一：“${rest || "（结尾）"}”`);
   take(opEntry[0], "运算符");
-  const b = parseNum(take(NUMBER, "数字"));
+  const b = checkedNum(take(NUMBER, "数字"));
 
   if (rest === "") return { a, op: opEntry[1], b };
   take(/^=/, "等号或结尾");
-  const answer = parseNum(take(NUMBER, "答案"));
+  const answer = checkedNum(take(NUMBER, "答案"));
   if (rest === "") return { a, op: opEntry[1], b, answer };
   if (opEntry[1] !== "÷") throw new ExpressionError("只有除法的答案可以写余数");
   take(/^(?:……|\.{2,}|…|r|R|\\ldots|\\cdots)/, "余数记号（……）");
-  const remainder = parseNum(take(NUMBER, "余数"));
+  const remainder = checkedNum(take(NUMBER, "余数"));
   if (rest !== "") throw new ExpressionError(`多出了“${rest}”`);
   return { a, op: opEntry[1], b, answer, remainder };
 }

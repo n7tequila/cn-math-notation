@@ -121,3 +121,13 @@ describe("出图与 MathML", () => {
     expect(layoutToMathML(build("7÷3", "round=2"))).toContain("<mo>≈</mo>");
   });
 });
+
+describe("审查发现（2026-11-27 第二轮）", () => {
+  test("repeatDot 只除一个循环节：places 比循环节长也报错（否则写出 0.3̇3333）", () => {
+    expect(() => build("1÷3", "repeatDot, places=5")).toThrow(/repeatDot/);
+    expect(quotient(build("1÷7", "repeatDot, places=6"))).toBe("0.1'42857'");
+  });
+  test("朗读文字说出循环节", () => {
+    expect(renderLayout(build("1÷7", "repeatDot"), DEFAULT_STYLE).label).toContain("循环节 142857");
+  });
+});

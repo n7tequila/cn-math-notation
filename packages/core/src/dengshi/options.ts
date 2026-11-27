@@ -11,8 +11,8 @@ export interface DengshiOptions {
   /** 写出几步（不算题目那行）；不写则全部写出。 */
   readonly steps?: number;
   readonly rest: DengshiRest;
-  /** 是否允许负数；只对语义式起作用。 */
-  readonly negative: boolean;
+  /** 是否允许负数；只对语义式起作用（可省略，默认允许；0.9.0 新增）。 */
+  readonly negative?: boolean;
 }
 
 export const DEFAULT_DENGSHI: DengshiOptions = { rest: "blank", negative: true };

@@ -20,6 +20,8 @@ export {
   createMathJaxMacros,
   inlineEmbeddedSvg,
   embedMathML,
+  embeddedSvgFor,
+  embeddedMathMLFor,
   type MathJaxTexParser,
   type MathJaxTexErrorClass,
   type MathJaxMacro,

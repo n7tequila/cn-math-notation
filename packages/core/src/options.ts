@@ -50,8 +50,8 @@ export interface StyleOptions {
   readonly places?: number;
   /** 求商的近似值：保留几位小数（语义式除法用；竖式多除一位，下面写“≈ 近似值”）。 */
   readonly round?: number;
-  /** 循环小数的商用循环点代替省略号（语义式除法用，默认关）。 */
-  readonly repeatDot: boolean;
+  /** 循环小数的商用循环点代替省略号（语义式除法用，默认关；可省略，0.9.0 新增）。 */
+  readonly repeatDot?: boolean;
 }
 
 export const DEFAULT_STYLE: StyleOptions = {

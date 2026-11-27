@@ -105,6 +105,8 @@ export {
   createMathJaxMacros,
   inlineEmbeddedSvg,
   embedMathML,
+  embeddedSvgFor,
+  embeddedMathMLFor,
   type FormulaFamily,
   type ParsedFormula,
   type FormulaTranslation,
