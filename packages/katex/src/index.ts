@@ -10,6 +10,8 @@
 import {
   buildDengshi,
   buildDengshiLayout,
+  katexMixedDengshi,
+  parseFormulaCommand,
   DEFAULT_STYLE,
   ExpressionError,
   LayoutSyntaxError,
@@ -77,9 +79,12 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/** 竖式块的 HTML 节点：以数学轴为中心，按 em 撑开高度。 */
+/**
+ * 竖式块的 HTML 节点，按 em 撑开高度。除法竖式让商那一行对齐基线（维护者 2026-11-28），
+ * 其他写法以数学轴（基线上方 0.25em）为中心。
+ */
 function htmlNode(rendered: RenderedSvg) {
-  const height = rendered.heightEm / 2 + 0.25;
+  const height = rendered.baselineEm ?? rendered.heightEm / 2 + 0.25;
   const depth = rendered.heightEm - height;
   const style = `display:inline-block;vertical-align:${(-depth).toFixed(3)}em;height:${rendered.heightEm.toFixed(3)}em;line-height:0`;
   const markup = `<span class="cmn-shushi-box" style="${style}">${rendered.svg}</span>`;
@@ -261,6 +266,18 @@ function registerSvgCommand(
  * 递等式：本库算出每一步、拼成 aligned 环境的 TeX，再交给 KaTeX 自己解析成节点嵌回当前公式，
  * 所以行内的分数、括号等都按 KaTeX 的排版来。
  */
+interface DengshiParser {
+  readonly mode: string;
+  readonly settings: object;
+  readonly gullet?: { readonly lexer?: { readonly input?: string } };
+}
+
+/** 这条公式除了递等式还有别的内容（如 S=\dengshi{…}）；拿不到原文时按单独写处理。 */
+function isMixed(parser: DengshiParser): boolean {
+  const input = parser.gullet?.lexer?.input;
+  return input !== undefined && parseFormulaCommand(input).kind === "mixed";
+}
+
 function registerDengshi(katex: KatexLike): void {
   const define = (fnName: string, build: (raw: string, options?: string) => string, label: string) =>
     katex.__defineFunction({
@@ -270,10 +287,11 @@ function registerDengshi(katex: KatexLike): void {
       numOptionalArgs: 1,
       argTypes: ["raw", "raw"],
       allowedInText: true,
-      handler: (context: { parser: { mode: string; settings: object } }, args: RawArg[], optArgs: (RawArg | null)[]) => {
+      handler: (context: { parser: DengshiParser }, args: RawArg[], optArgs: (RawArg | null)[]) => {
         let tex: string;
         try {
           tex = build(normalizeRaw(args[0]!.string), optArgs[0]?.string);
+          if (isMixed(context.parser)) tex = katexMixedDengshi(tex);
         } catch (e) {
           if (e instanceof ExpressionError || e instanceof OptionError) throw new katex.ParseError(`${label}：${e.message}`);
           throw e;

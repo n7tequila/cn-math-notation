@@ -222,3 +222,27 @@ describe("\\dengshi 用调用方的 KaTeX 设置解析生成的 TeX", () => {
     expect(out).toContain('href="https://example.com"');
   });
 });
+
+describe("混写对齐（维护者 2026-11-28，与 Typora、出图服务一致）", () => {
+  test("除法竖式：商那一行对齐基线（盒子在基线以下的深度 = 总高 − baselineEm）", async () => {
+    const { renderShushi } = await import("@cn-math-notation/core");
+    const r = renderShushi("7÷3");
+    const html = katex.renderToString(String.raw`\text{商 }\shushi{7\div3}`);
+    const depth = r.heightEm - r.baselineEm!;
+    expect(html).toContain(`vertical-align:${(-depth).toFixed(3)}em`);
+  });
+
+  test("其他竖式仍上下居中对着公式中线", async () => {
+    const { renderShushi } = await import("@cn-math-notation/core");
+    const r = renderShushi("74+88");
+    const depth = r.heightEm - (r.heightEm / 2 + 0.25);
+    expect(katex.renderToString(String.raw`x+\shushi{74+88}`)).toContain(`vertical-align:${(-depth).toFixed(3)}em`);
+  });
+
+  test("混写的递等式：后面各行的等号挂在左边（负 kern），单独写时照旧", () => {
+    const mixed = katex.renderToString(String.raw`S=\dengshi{2\times(3+4)}`);
+    const alone = katex.renderToString(String.raw`\dengshi{2\times(3+4)}`);
+    expect(mixed).toContain("-1.3333em");
+    expect(alone).not.toContain("-1.3333em");
+  });
+});

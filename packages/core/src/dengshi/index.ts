@@ -56,6 +56,28 @@ export function parseDengshiLines(source: string): string[] {
   return lines;
 }
 
+/** {}={} 的宽度：等号 0.7778em + 两侧关系符间距各 5/18em。 */
+const EQUALS_WITH_SPACE_EM = "1.3333em";
+
+/**
+ * KaTeX 里混写的递等式（如 S=\dengshi{…}，维护者 2026-11-28）：第一行对齐基线，后面各行的等号对齐前面的“=”。
+ * KaTeX 的 aligned 不支持 [t]（会把“[t]”当文字），所以在上方补和下面各行同样高的看不见的行，
+ * 让第一行落在正中（数学轴）；等号前加负 kern 挂到左边（\mathllap 在 KaTeX 里会把等号排低）。
+ * 代价是公式上方多出这几行高的空白。
+ */
+export function katexMixedDengshi(tex: string): string {
+  const sep = `\\\\[${ROW_GAP}]`;
+  const rows = tex.replace(/^\\begin\{aligned\}|\\end\{aligned\}$/g, "").split(sep);
+  const lines = rows.map((row, i) => (i === 0 ? row.replace(/^&/, "") : row.replace(/^=\{\}&/, "")));
+  const [first = "", ...later] = lines;
+  const out = [
+    ...[...later].reverse().map((line) => `&\\vphantom{${line}}`),
+    `&${first}`,
+    ...later.map((line) => `&\\kern-${EQUALS_WITH_SPACE_EM}{}={}${line}`),
+  ];
+  return `\\begin{aligned}${out.join(sep)}\\end{aligned}`;
+}
+
 export function buildDengshiLayout(source: string, options?: string): string {
   return dengshiTex(parseDengshiLines(source), parseDengshiOptions(options));
 }

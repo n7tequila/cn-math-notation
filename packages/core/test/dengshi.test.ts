@@ -187,3 +187,10 @@ test("递等式里的数最多 30 位（2026-11-27 安全审查 H1）", () => {
   expect(() => dengshiSteps(`${"9".repeat(31)}+1`)).toThrow(/最多 30 位/);
   expect(dengshiSteps(`${"9".repeat(30)}+1`).at(-1)).toBe("1" + "0".repeat(30));
 });
+
+test("katexMixedDengshi：上方补看不见的行，后面各行的等号用负 kern 挂到左边（2026-11-28）", async () => {
+  const { katexMixedDengshi } = await import("../src/index.ts");
+  expect(katexMixedDengshi(buildDengshi("1+2+3"))).toBe(
+    "\\begin{aligned}&\\vphantom{6}\\\\[6pt]&\\vphantom{3+3}\\\\[6pt]&1+2+3\\\\[6pt]&\\kern-1.3333em{}={}3+3\\\\[6pt]&\\kern-1.3333em{}={}6\\end{aligned}",
+  );
+});

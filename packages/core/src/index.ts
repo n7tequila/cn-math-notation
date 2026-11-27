@@ -2,6 +2,7 @@ export type * from "./model.ts";
 export {
   buildDengshi,
   buildDengshiLayout,
+  katexMixedDengshi,
   dengshiSteps,
   dengshiTex,
   parseDengshiLines,
