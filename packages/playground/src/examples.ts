@@ -144,6 +144,8 @@ export const DENGSHI_EXAMPLES: readonly DengshiExample[] = [
   { id: "ds-mixed", name: "先乘除后加减 25×4+36÷6", tex: String.raw`\dengshi{25\times4+36\div6}` },
   { id: "ds-order", name: "乘法优先 20−5+3×4", tex: String.raw`\dengshi{20-5+3\times4}` },
   { id: "ds-bracket", name: "中括号 [100−(20+30)]÷5", tex: String.raw`\dengshi{[100-(20+30)]\div5}` },
+  { id: "ds-decimal", name: "小数 (3.6−1.6)×0.25+1÷8", tex: String.raw`\dengshi{(3.6-1.6)\times0.25+1\div8}` },
+  { id: "ds-negative", name: "负数 2×(3−5)−(−4)", tex: String.raw`\dengshi{2\times(3-5)-(-4)}` },
   { id: "ds-steps", name: "只写前一步、其余留空 2×3×4+1", tex: String.raw`\dengshi[steps=1]{2\times3\times4+1}` },
   { id: "ds-steps-cut", name: "只写前一步、直接截断", tex: String.raw`\dengshi[steps=1, rest=cut]{2\times3\times4+1}` },
   { id: "ds-layout", name: "直写（简便计算）25×(40+4)", tex: String.raw`\dengshi*{25\times(40+4) \\ 25\times40+25\times4 \\ 1000+100 \\ 1100}` },

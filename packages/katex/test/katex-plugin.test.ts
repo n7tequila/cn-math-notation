@@ -176,8 +176,8 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
 
   test("递等式英文别名 \\stepeq 与报错", () => {
     expect(katex.renderToString(String.raw`\stepeq{1+2+3}`)).toContain("6");
-    expect(() => katex.renderToString(String.raw`\dengshi{7\div2}`)).toThrow(/除不尽/);
-    expect(katex.renderToString(String.raw`\dengshi{7\div2}`, { throwOnError: false })).toContain("katex-error");
+    expect(() => katex.renderToString(String.raw`\dengshi{7\div3}`)).toThrow(/除不尽/);
+    expect(katex.renderToString(String.raw`\dengshi{7\div3}`, { throwOnError: false })).toContain("katex-error");
   });
 
   test("递等式里可以写分数等普通公式（直写）", () => {

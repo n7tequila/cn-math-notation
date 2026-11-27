@@ -1,6 +1,7 @@
 /**
  * 递等式的选项（维护者 2026-11-26）：`steps=N` 只写前 N 步（不算题目那行）；
  * 没写出来的步骤默认每步留一个空等号行（rest=blank），rest=cut 时直接截断。
+ * `negative=false` 不允许负数（维护者 2026-11-27：默认允许），只对语义式起作用。
  */
 import { OptionError } from "../options.ts";
 
@@ -10,9 +11,11 @@ export interface DengshiOptions {
   /** 写出几步（不算题目那行）；不写则全部写出。 */
   readonly steps?: number;
   readonly rest: DengshiRest;
+  /** 是否允许负数；只对语义式起作用。 */
+  readonly negative: boolean;
 }
 
-export const DEFAULT_DENGSHI: DengshiOptions = { rest: "blank" };
+export const DEFAULT_DENGSHI: DengshiOptions = { rest: "blank", negative: true };
 
 function applyOption(opts: DengshiOptions, key: string, value: string): DengshiOptions {
   if (key === "steps") {
@@ -22,6 +25,10 @@ function applyOption(opts: DengshiOptions, key: string, value: string): DengshiO
   if (key === "rest") {
     if (value !== "blank" && value !== "cut") throw new OptionError(`rest 只能是 blank 或 cut，收到 "${value}"`);
     return { ...opts, rest: value };
+  }
+  if (key === "negative") {
+    if (value !== "true" && value !== "false") throw new OptionError(`negative 只能是 true 或 false，收到 "${value}"`);
+    return { ...opts, negative: value === "true" };
   }
   throw new OptionError(`未知选项 "${key}"`);
 }

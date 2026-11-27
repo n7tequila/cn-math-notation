@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { ExpressionError, buildDengshi, buildDengshiLayout, dengshiSteps, dengshiTex } from "../src/index.ts";
 
 /** 去掉 TeX 里的 \times / \div，便于肉眼对照。 */
-const plain = (lines: string[]) => lines.map((l) => l.replace(/\\times /g, "×").replace(/\\div /g, "÷"));
+const plain = (lines: string[]) =>
+  lines.map((l) => l.replace(/\\times /g, "×").replace(/\{(-[\d.]+)\}/g, "$1"));
 const steps = (expr: string) => plain(dengshiSteps(expr));
 
 describe("运算顺序", () => {
@@ -42,14 +43,12 @@ describe("运算顺序", () => {
 
 describe("报错", () => {
   const bad: [string, RegExp][] = [
-    ["7÷2", /除不尽/],
-    ["3-5", /负数/],
+    ["7÷3", /除不尽/],
     ["1÷0", /不能是 0/],
     ["1+", /少了一个数/],
     ["(1+2", /小括号没有配对/],
     ["[1+2)", /中括号没有配对/],
     ["1+2)", /多了一个右括号/],
-    ["1.5+2", /小数/],
     ["12", /只有一个数/],
     ["", /空/],
     ["2(3+4)", /少了运算符/],
@@ -113,5 +112,62 @@ describe("只写前几步 steps（维护者 2026-11-26）", () => {
     expect(() => buildDengshi("1+2", "steps=a")).toThrow(/steps/);
     expect(() => buildDengshi("1+2", "rest=x")).toThrow(/rest/);
     expect(() => buildDengshi("1+2", "foo")).toThrow(/未知选项/);
+  });
+});
+
+describe("小数（2026-11-27）", () => {
+  test("小数加减乘除，算出来的数去掉末尾的 0", () => {
+    expect(steps("0.1+0.2")).toEqual(["0.1+0.2", "0.3"]);
+    expect(steps("0.5×0.4+1")).toEqual(["0.5×0.4+1", "0.2+1", "1.2"]);
+    expect(steps("2.5+1.5")).toEqual(["2.5+1.5", "4"]);
+    expect(steps("1.2÷0.4")).toEqual(["1.2÷0.4", "3"]);
+    expect(steps("1÷8")).toEqual(["1÷8", "0.125"]);
+    expect(steps("(3.6-1.6)×0.25")).toEqual(["(3.6-1.6)×0.25", "2×0.25", "0.5"]);
+  });
+  test("题目里写的数照原样保留，包括末尾的 0", () => {
+    expect(steps("3.50×2+1")).toEqual(["3.50×2+1", "7+1", "8"]);
+  });
+  test("除不尽仍报错，提示改用直写", () => {
+    expect(() => dengshiSteps("1÷3")).toThrow(/除不尽/);
+    expect(() => dengshiSteps("1÷3")).toThrow(/dengshi\*/);
+    expect(() => dengshiSteps("1÷0.3")).toThrow(/除不尽/);
+  });
+});
+
+describe("负数（维护者 2026-11-27：默认允许，负数加括号）", () => {
+  test("算出负数：前面是运算符时加括号", () => {
+    expect(steps("2×(3-5)")).toEqual(["2×(3-5)", "2×(-2)", "-4"]);
+    expect(steps("3-5")).toEqual(["3-5", "-2"]);
+  });
+  test("开头的负数与紧跟左括号的负数不加括号", () => {
+    expect(steps("-2+5")).toEqual(["-2+5", "3"]);
+    expect(steps("(-3+1)×2")).toEqual(["(-3+1)×2", "-2×2", "-4"]);
+  });
+  test("括号只包着一个负数：当作这个数本身，不多算一步去括号；题目里的括号照原样写回", () => {
+    expect(steps("(-3)×2+5")).toEqual(["(-3)×2+5", "-6+5", "-1"]);
+    expect(steps("5-(-2)")).toEqual(["5-(-2)", "7"]);
+    expect(steps("5×(−2)")).toEqual(["5×(-2)", "-10"]);
+  });
+  test("负数要加括号；负号后面要跟一个数", () => {
+    expect(() => dengshiSteps("5×-2")).toThrow(/负数要加括号/);
+    expect(() => dengshiSteps("-(3+4)")).toThrow(/负号后面/);
+  });
+  test("negative=false：不允许负数（小学题防止误写）", () => {
+    expect(() => buildDengshi("3-5", "negative=false")).toThrow(/负数/);
+    expect(() => buildDengshi("(-3)×2", "negative=false")).toThrow(/负数/);
+    expect(buildDengshi("5-3", "negative=false")).toBe(buildDengshi("5-3"));
+    expect(() => buildDengshi("1+2", "negative=x")).toThrow(/negative/);
+  });
+});
+
+describe("生成的 TeX（2026-11-27）", () => {
+  test("除号直接写 ÷，不用 \\div（MathJax 的 physics 宏包把 \\div 改成了散度 ∇·）", () => {
+    const lines = dengshiSteps("8÷2+1");
+    expect(lines[0]).toBe("8÷2+1");
+    expect(lines.join("")).not.toContain("\\div");
+  });
+  test("不在括号里的负数包一层花括号，排成负号而不是减号", () => {
+    expect(dengshiSteps("(-3)×2+5")[1]).toBe("{-6}+5");
+    expect(dengshiSteps("2×(3-5)")[1]).toBe("2\\times (-2)");
   });
 });

@@ -5,10 +5,10 @@
  */
 import { ExpressionError } from "../semantic/numbers.ts";
 import { parseArith, simplifySteps, toTex } from "./expr.ts";
-import { parseDengshiOptions, type DengshiOptions } from "./options.ts";
+import { DEFAULT_DENGSHI, parseDengshiOptions, type DengshiOptions } from "./options.ts";
 
 export { parseDengshiOptions, DEFAULT_DENGSHI, type DengshiOptions, type DengshiRest } from "./options.ts";
-export { parseArith, simplifySteps, toTex as arithToTex, type Node as ArithNode } from "./expr.ts";
+export { parseArith, simplifySteps, toTex as arithToTex, type Node as ArithNode, type ArithOptions } from "./expr.ts";
 
 /** 行距，与课本里每步一行的疏朗程度接近。 */
 const ROW_GAP = "6pt";
@@ -32,13 +32,15 @@ export function dengshiTex(lines: readonly string[], opts?: DengshiOptions): str
 }
 
 /** 语义式：只写算式，按运算顺序逐步化简，每一步一行。返回每行的 TeX（不含等号）。 */
-export function dengshiSteps(expression: string): string[] {
-  return simplifySteps(parseArith(expression)).map(toTex);
+export function dengshiSteps(expression: string, opts: DengshiOptions = DEFAULT_DENGSHI): string[] {
+  const arith = { negative: opts.negative };
+  return simplifySteps(parseArith(expression, arith), arith).map((step) => toTex(step));
 }
 
 /** 语义式一步到位：算式 + 选项原文（如 `steps=2`）→ 递等式 TeX。 */
 export function buildDengshi(expression: string, options?: string): string {
-  return dengshiTex(dengshiSteps(expression), parseDengshiOptions(options));
+  const opts = parseDengshiOptions(options);
+  return dengshiTex(dengshiSteps(expression, opts), opts);
 }
 
 /**

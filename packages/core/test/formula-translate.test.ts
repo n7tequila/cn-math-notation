@@ -43,7 +43,9 @@ describe("translateFormula：公式文本 → 本库 SVG / 递等式 TeX / 放�
     if (star.kind === "error") expect(star.message.startsWith("\\shushi*：")).toBe(true);
     expect(star.kind).toBe("error");
     expect(translateFormula(String.raw`\shushi[nope]{74+88}`).kind).toBe("error");
-    expect(translateFormula(String.raw`\dengshi{7-9}`).kind).toBe("error");
+    expect(translateFormula(String.raw`\dengshi{7\div3}`).kind).toBe("error");
+    expect(translateFormula(String.raw`\dengshi[negative=false]{7-9}`).kind).toBe("error");
+    expect(translateFormula(String.raw`\dengshi{7-9}`).kind).toBe("tex");
   });
 
   test("混写报错原样传出", () => {
