@@ -26,6 +26,9 @@ const TERM_CHAR_W = 12;
 const TERM_PAD = 14;
 const SERIF = "'Times New Roman', 'Songti SC', serif";
 
+/** 数字基线在一行里的位置（从行顶往下的比例）。 */
+const BASELINE_RATIO = 0.76;
+
 export const COLORS = {
   ink: "currentColor",
   teach: "#d4402b",
@@ -41,6 +44,8 @@ export interface RenderedSvg {
   readonly heightEm: number;
   /** 朗读用的文字描述。 */
   readonly label: string;
+  /** 除法竖式：商那一行的基线离顶边多少 em（混写时这一行对齐前后文字的基线，维护者 2026-11-28）。 */
+  readonly baselineEm?: number;
 }
 
 interface Geometry {
@@ -153,7 +158,7 @@ function drawGapPoint(x: number, baseline: number, point: PointMark, color?: str
 
 function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
   const x = cx(geo, cell.col);
-  const baseline = top + ROW_H * 0.76;
+  const baseline = top + ROW_H * BASELINE_RATIO;
   const parts: string[] = [];
   const marks = new Set(cell.marks);
   if (marks.has("err")) {
@@ -174,7 +179,8 @@ function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
     parts.push(text(x, baseline, "…", FONT_SIZE, cell.color ?? COLORS.ink));
   }
   if (marks.has("xun")) {
-    parts.push(`<circle class="cmn-xun" cx="${fmt(x)}" cy="${fmt(top + 3)}" r="1.8" fill="${cell.color ?? COLORS.ink}"/>`);
+    // 循环点：红色（维护者 2026-11-28）
+    parts.push(`<circle class="cmn-xun" cx="${fmt(x)}" cy="${fmt(top + 3)}" r="2" fill="${cell.color ?? COLORS.teach}"/>`);
   }
   if (cell.point !== undefined) parts.push(drawGapPoint(x + geo.colWidth(cell.col) / 2, baseline, cell.point, cell.pointColor));
   if (marks.has("tui")) parts.push(`<circle class="cmn-tui" cx="${fmt(x)}" cy="${fmt(top + 1)}" r="2.6" fill="${COLORS.teach}"/>`);
@@ -196,7 +202,7 @@ const OPERATOR_GLYPH: Readonly<Record<Operator, string>> = { "+": "+", "-": "−
 function drawOperator(geo: Geometry, row: DigitRow, top: number, style: StyleOptions): string {
   if (row.operator === undefined) return "";
   const x = style.operatorPlacement === "adjacent" ? cx(geo, leftmostCol(row) + 1) : PAD + OP_W / 2;
-  return text(x, top + ROW_H * 0.76, OPERATOR_GLYPH[row.operator], FONT_SIZE, COLORS.ink);
+  return text(x, top + ROW_H * BASELINE_RATIO, OPERATOR_GLYPH[row.operator], FONT_SIZE, COLORS.ink);
 }
 
 function drawCarryRow(geo: Geometry, row: CarryRow, top: number, sitsOnRule: boolean, style: StyleOptions): string {
@@ -218,7 +224,7 @@ function drawDivisor(geo: Geometry, row: DigitRow, top: number): string {
   const divisorX = bracketX - BRACKET_W / 2 - divisorTextWidth(row) / 2;
   const lineY = top + 3;
   return [
-    drawDivisorText(row, divisorX, top + ROW_H * 0.76),
+    drawDivisorText(row, divisorX, top + ROW_H * BASELINE_RATIO),
     `<path class="cmn-bracket" style="stroke:${COLORS.ink};fill:none" d="M ${fmt(bracketX)} ${fmt(lineY)} Q ${fmt(bracketX + 7)} ${fmt(top + ROW_H / 2)} ${fmt(bracketX - 2)} ${fmt(top + ROW_H - 2)}" fill="none" stroke="${COLORS.ink}" stroke-width="1.3"/>`,
     `<line x1="${fmt(bracketX)}" y1="${fmt(lineY)}" x2="${fmt(geo.gridRight + 4)}" y2="${fmt(lineY)}" stroke="${COLORS.ink}" stroke-width="1.3"/>`,
   ].join("");
@@ -335,8 +341,10 @@ export function renderLayout(
   const left = ruleLeft(layout, geo);
   let y = PAD + 2;
   const contentTop = y;
+  let quotientBaseline: number | undefined;
   layout.rows.forEach((row, i) => {
     const h = rowHeight(row);
+    if (row.kind === "digits" && row.quotient === true) quotientBaseline = y + ROW_H * BASELINE_RATIO;
     if (row.kind === "digits") {
       body.push(drawOperator(geo, row, y, style), drawDivisor(geo, row, y));
       for (const c of row.cells) body.push(drawDigitCell(geo, c, y));
@@ -362,5 +370,6 @@ export function renderLayout(
     guides +
     body.join("") +
     `</svg>`;
-  return { svg, width, height, widthEm: width / FONT_SIZE, heightEm: height / FONT_SIZE, label };
+  const base = { svg, width, height, widthEm: width / FONT_SIZE, heightEm: height / FONT_SIZE, label };
+  return quotientBaseline === undefined ? base : { ...base, baselineEm: quotientBaseline / FONT_SIZE };
 }

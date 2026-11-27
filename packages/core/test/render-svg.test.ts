@@ -100,7 +100,6 @@ describe("parseOptions", () => {
       remainder: false,
       pointColumn: false,
       coefficients: false,
-      repeatDot: false,
     });
   });
   test("只写键名表示 true", () => {

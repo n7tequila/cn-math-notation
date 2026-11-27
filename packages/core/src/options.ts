@@ -50,7 +50,10 @@ export interface StyleOptions {
   readonly places?: number;
   /** 求商的近似值：保留几位小数（语义式除法用；竖式多除一位，下面写“≈ 近似值”）。 */
   readonly round?: number;
-  /** 循环小数的商用循环点代替省略号（语义式除法用，默认关；可省略，0.9.0 新增）。 */
+  /**
+   * 循环小数的商用循环点（红色，竖式只除一个循环节）还是省略号（除到循环节一遍且至少 3 位）。
+   * 不写时用循环点；写了 places 时用省略号（维护者 2026-11-28）。选项 `ellipsis` 等于 repeatDot=false。
+   */
   readonly repeatDot?: boolean;
 }
 
@@ -70,7 +73,6 @@ export const DEFAULT_STYLE: StyleOptions = {
   remainder: false,
   pointColumn: false,
   coefficients: false,
-  repeatDot: false,
 };
 
 /** places 上限【推论】：竖式再长就不适合手写了。 */
@@ -143,6 +145,10 @@ function applyOption(opts: StyleOptions, key: string, value: string): StyleOptio
       throw new OptionError(`process 只能是 auto、show 或 hide，收到 "${value}"`);
     }
     return { ...opts, process: value };
+  }
+  if (key === "ellipsis") {
+    if (value !== "true" && value !== "false") throw new OptionError(`选项 ellipsis 只能是 true 或 false，收到 "${value}"`);
+    return { ...opts, repeatDot: value === "false" };
   }
   if (key === "places") return { ...opts, places: intOption(key, value, 1, MAX_PLACES) };
   if (key === "round") return { ...opts, round: intOption(key, value, 0, MAX_ROUND) };

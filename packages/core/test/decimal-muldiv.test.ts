@@ -209,10 +209,10 @@ describe("小数除法（样本 15.6÷6、5.8÷4、12÷50、6.78÷1.2）", () =>
   });
 
   test("除不尽：默认按循环小数画（2026-11-27，详见 recurring-div.test.ts）；写余数照旧", () => {
-    expect(shape(build("7÷3"))[0]).toBe("shang 2.333~@-3");
+    expect(shape(build("7÷3", "ellipsis"))[0]).toBe("shang 2.333~@-3");
     expect(shape(build("7÷3", "remainder"))[0]).toBe("shang 2@0");
     expect(shape(build("71÷4=17……3"))[0]).toBe("shang 17@0"); // 写了余数自动按余数画
-    expect(shape(build("7.5÷0.7"))[0]).toMatch(/^shang 10.714285~@/);
+    expect(shape(build("7.5÷0.7", "ellipsis"))[0]).toMatch(/^shang 10.714285~@/);
   });
 
   test("孩子的答案 15.6÷6=2.5：只写商与被除数，错位标错；小数除法不能写余数", () => {

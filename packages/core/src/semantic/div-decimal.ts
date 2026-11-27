@@ -6,8 +6,8 @@
  * - 除到被除数末尾还有余数：添的 0 写在余数行，不补进被除数；markAppended 时它和对应的商位标红。
  *   被除数原来没有小数点时写成“×.0”（12÷50 → 12.0），第一步就要用到的 0 也写进被除数。
  * - 商的整数部分不够商 1 时写 0，小数点后不够商 1 的位也写 0（0.12÷4 = 0.03）。
- * - 商是循环小数（维护者 2026-11-27）：默认除到循环节完整一遍且至少 3 位，商后面写省略号，最后一行写余数；
- *   places=N 除到第 N 位；repeatDot 只除一个循环节，在循环节首尾数字上打循环点。
+ * - 商是循环小数（维护者 2026-11-28 改）：默认只除一个循环节，商在循环节首尾数字上打红色循环点，最后一行写余数；
+ *   ellipsis（repeatDot=false）或写了 places 时用省略号写法：除到循环节一遍且至少 3 位（或第 N 位），商后写省略号。
  * - 求商的近似值 round=N：竖式除到第 N+1 位，下面写“≈ 近似值”（四舍五入，末尾的 0 照写）；
  *   本来就能除尽、且小数位数不超过 N 时照常画。
  * - 循环小数、近似值的孩子答案暂不支持。
@@ -52,8 +52,10 @@ function plan(exp: Expansion | undefined, style: StyleOptions): Plan {
     return exactFits ? { mode: "exact" } : { mode: "round", digits: style.round + 1, keep: style.round };
   }
   if (exp !== undefined && exp.period === 0) return { mode: "exact" };
-  if (style.repeatDot === true) {
-    if (exp === undefined) throw new ExpressionError(`商的小数部分超过 ${MAX_PLACES} 位还没有循环或除尽，不能打循环点`);
+  if (style.repeatDot === true || (style.repeatDot === undefined && style.places === undefined)) {
+    if (exp === undefined) {
+      throw new ExpressionError(`商的小数部分超过 ${MAX_PLACES} 位还没有循环或除尽，不能打循环点；可以用 places 写明除到第几位（省略号写法）`);
+    }
     const length = exp.pre + exp.period;
     if (style.places !== undefined && style.places !== length) {
       throw new ExpressionError(`repeatDot 只除一个循环节（${length} 位），places=${style.places} 对不上；去掉 places 即可`);
@@ -211,7 +213,7 @@ function build(dividend: Dividend, divisor: bigint, division: Division, style: S
 /** 商的格子：循环小数加省略号或循环点。 */
 function decorateQuotient(cells: Cell[], p: Plan, places: number, style: StyleOptions): Cell[] {
   if (p.mode !== "recurring") return cells;
-  if (style.repeatDot === true && p.cycle !== undefined) {
+  if (p.cycle !== undefined) {
     const { pre, period } = p.cycle;
     const dotted = new Set([places - (pre + 1), places - (pre + period)]);
     return cells.map((c) => (dotted.has(c.col) ? { ...c, marks: [...c.marks, "xun"] } : c));

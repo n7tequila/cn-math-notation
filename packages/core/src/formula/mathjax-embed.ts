@@ -62,10 +62,11 @@ function macro(TexError: MathJaxTexErrorClass): MathJaxMacro {
     switch (r.kind) {
       case "svg": {
         const { widthEm, heightEm } = r.rendered;
+        const above = aboveBaseline(r.rendered);
         const space = parser.create("node", "mspace", [], {
           width: `${widthEm}em`,
-          height: `${heightEm / 2 + MATH_AXIS_EM}em`,
-          depth: `${Math.max(0, heightEm / 2 - MATH_AXIS_EM)}em`,
+          height: `${above}em`,
+          depth: `${Math.max(0, heightEm - above)}em`,
         });
         parser.Push(
           parser.create("node", "mrow", [space], { class: EMBED_CLASS, "data-cmn-tex": toBase64(tex) }),
@@ -94,6 +95,14 @@ function hangingDengshi(tex: string): string {
   return tex
     .replace(/^\\begin\{aligned\}/, "\\begin{aligned}[t]")
     .replace(/(\\\\\[[^\]]*\])=\{\}&/g, "$1&\\llap{{}={}}");
+}
+
+/**
+ * 嵌进公式时基线以上占多少 em：除法竖式让商那一行对齐基线（维护者 2026-11-28），
+ * 其他写法上下居中对着公式中线（基线上方 0.25em，维护者 2026-11-27）。
+ */
+function aboveBaseline(rendered: { readonly heightEm: number; readonly baselineEm?: number }): number {
+  return rendered.baselineEm ?? rendered.heightEm / 2 + MATH_AXIS_EM;
 }
 
 /** 本库全部命令名（不带反斜杠）→ MathJax 宏。 */
@@ -139,16 +148,18 @@ function sizeEm(attrs: Map<string, string>): readonly [number, number] {
 
 /**
  * 本库 SVG → 放进盒子的内联 SVG：根元素换成 MathJax 单位的尺寸、去掉内联样式，颜色跟随外层文字；
- * MathJax 的坐标 y 轴朝上（外层 scale(1,-1)），所以再翻一次，顶边放在基线上方 h/2+0.25em。
+ * MathJax 的坐标 y 轴朝上（外层 scale(1,-1)），所以再翻一次，顶边放在基线上方（除法竖式为商那一行的基线
+ * 到顶边的距离，其他写法为 h/2+0.25em）。
  */
-function boxContent(svg: string): string {
+function boxContent(rendered: { readonly svg: string; readonly heightEm: number; readonly baselineEm?: number }): string {
+  const svg = rendered.svg;
   const root = ROOT.exec(svg);
   if (root === null) return "";
   const attrs = attrsOf(root[1]!);
   const [wEm, hEm] = sizeEm(attrs);
   const w = wEm * MATHJAX_UNITS_PER_EM;
   const h = hEm * MATHJAX_UNITS_PER_EM;
-  const up = (hEm / 2 + MATH_AXIS_EM) * MATHJAX_UNITS_PER_EM;
+  const up = (rendered.baselineEm ?? hEm / 2 + MATH_AXIS_EM) * MATHJAX_UNITS_PER_EM;
   const kept = [...attrs].filter(([k]) => !["width", "height", "style", "xmlns"].includes(k));
   const open =
     `<svg width="${w}" height="${h}" preserveAspectRatio="none" fill="currentColor" stroke="none"` +
@@ -186,7 +197,7 @@ export function embeddedSvgFor(data: string): string {
   const tex = decodeCommand(data);
   if (tex === undefined) return "";
   const r = translateCached(tex);
-  return r.kind === "svg" ? boxContent(r.rendered.svg) : "";
+  return r.kind === "svg" ? boxContent(r.rendered) : "";
 }
 
 /** data-cmn-tex 的值 → 本库的 MathML（不含 <math> 外壳）；不是合法的本库命令时返回 undefined。 */

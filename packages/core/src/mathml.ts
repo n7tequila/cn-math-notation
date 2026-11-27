@@ -82,7 +82,7 @@ function cellElement(cell: Cell): string {
   }
   if (marks.has("bu")) el = `<menclose notation="box" mathcolor="${COLORS.teach}">${el}</menclose>`;
   if (marks.has("hua")) el = `<menclose notation="updiagonalstrike">${el}</menclose>`;
-  if (marks.has("xun")) el = `<mover accent="true">${el}<mo>˙</mo></mover>`;
+  if (marks.has("xun")) el = `<mover accent="true">${el}<mo mathcolor="${COLORS.teach}">˙</mo></mover>`;
   return cell.point === undefined ? el : `<mrow>${el}${pointElement(cell.point)}</mrow>`;
 }
 

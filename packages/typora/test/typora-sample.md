@@ -80,4 +80,8 @@ $$\shushi{3.50\times12}$$
 
 $$\shushi{7\div3}$$
 
-$$\shushi[repeatDot]{1\div7}$$
+$$\shushi{1\div7}$$
+
+$$\shushi[ellipsis]{7\div3}$$
+
+$$\text{商 } \shushi{7\div3} \text{，余数 1}$$

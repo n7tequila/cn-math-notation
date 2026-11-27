@@ -213,3 +213,15 @@ describe("安全审查（2026-11-27 第二轮）", () => {
     expect(translateFormula(`\\shushi{${"9".repeat(30)}×2}`).kind).toBe("svg");
   });
 });
+
+describe("混写里除法竖式：盒子按商那一行的基线分高和深（维护者 2026-11-28）", () => {
+  test("mspace 的高 = baselineEm，深 = 总高 − baselineEm", async () => {
+    const { renderShushi } = await import("../src/index.ts");
+    const parser = new FakeParser("{7÷3}");
+    macros.shushi!(parser, "\\shushi");
+    const space = (parser.pushed[0] as Box).children[0]!;
+    const r = renderShushi("7÷3");
+    expect(Number.parseFloat(space.attrs.height!)).toBeCloseTo(r.baselineEm!, 5);
+    expect(Number.parseFloat(space.attrs.depth!)).toBeCloseTo(r.heightEm - r.baselineEm!, 5);
+  });
+});
