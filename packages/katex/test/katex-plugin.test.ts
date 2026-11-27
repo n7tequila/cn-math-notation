@@ -90,7 +90,7 @@ describe("原型验证：KaTeX 0.19.1 上的 raw 参数", () => {
   test("语义式的选项与错误", () => {
     expect(katex.renderToString(String.raw`\shushi[guides=false]{74+88}`)).not.toContain("cmn-guide");
     expect(() => katex.renderToString(String.raw`\shushi{3-5}`)).toThrow(/被减数比减数小/);
-    expect(() => katex.renderToString(String.raw`\shushi{3.50\times12}`)).toThrow(/末尾有 0/);
+    expect(() => katex.renderToString(String.raw`\shushi{1\div0}`)).toThrow(/不能是 0/);
   });
 
   test("语义式与直写布局画出同一张图", () => {

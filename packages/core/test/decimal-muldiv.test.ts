@@ -94,8 +94,23 @@ describe("小数乘法（样本 4.1×3.2、6.9×3、4.2×20）", () => {
     ]);
   });
 
-  test("小数因数末尾有 0（3.50×12）先报错", () => {
-    expect(() => build("3.50×12")).toThrow(/末尾/);
+  test("小数因数末尾有 0（3.50×12，维护者 2026-11-27）：0 甩在外面，按 35×12 算，积 42.00 末尾的 0 划掉", () => {
+    const layout = build("3.50×12");
+    expect(shape(layout)).toEqual(["3.50@0", "× 12@1", "---", "70@1", "35@2", "---", "42.00@0"]);
+    expect(marks(layout.rows.at(-1))).toEqual([[], [], ["hua"], ["hua"]]);
+  });
+
+  test("小数因数末尾有 0 的其他情形：乘数一侧、一位数乘、两个都有、因数是 0.0", () => {
+    expect(shape(build("12×3.50")).slice(0, 2)).toEqual(["12@1", "× 3.50@0"]);
+    expect(shape(build("0.50×3"))).toEqual(["0.50@0", "× 3@1", "---", "1.50@0"]);
+    expect(shape(build("0.20×30")).slice(0, 2)).toEqual(["0.20@1", "× 30@1"]);
+    expect(shape(build("0.20×30")).at(-1)).toBe("6.00@0");
+    expect(shape(build("0.0×3")).at(-1)).toBe("0.0@0");
+  });
+
+  test("孩子的答案省略末尾的 0 不判错", () => {
+    const layout = build("3.50×12=42");
+    expect(marks(layout.rows.at(-1)).flat()).not.toContain("err");
   });
 
   test("孩子的答案 4.1×3.2=13.2：只写答案，错位与漏位标错", () => {

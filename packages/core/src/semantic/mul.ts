@@ -7,7 +7,9 @@
  *   积的末尾再添上同样多的 0。如 380×3：3 对齐 8，算 38×3=114，再添 0 得 1140。
  * - 小数（样本“小数乘法”，设计草案 §11.2）：两个因数末位对齐，按整数乘，部分积不点小数点；
  *   积的小数点不占列，写在空隙里（markPoint 标红）；积前面位数不够补 0（0.036，不加框）；
- *   积末尾的 0 划掉（strikeZero）。小数因数末尾有 0（3.50）暂不支持。
+ *   积末尾的 0 划掉（strikeZero）。
+ * - 小数因数末尾有 0（3.50×12，维护者 2026-11-27 定，无样本【推论】）：照整数的规则，0 甩在外面，
+ *   按 35×12 算，积按原来的小数位数点小数点（42.00），末尾的 0 划掉。
  */
 import type { Cell, Layout, Row } from "../model.ts";
 import type { StyleOptions } from "../options.ts";
@@ -73,11 +75,11 @@ interface Factor {
 
 function factor(n: Num): Factor {
   if (n.frac !== "") {
-    if (n.frac.endsWith("0")) {
-      throw new ExpressionError(`小数因数末尾有 0（${n.int}.${n.frac}）暂不支持，请先去掉末尾的 0`);
-    }
-    const core = (n.int + n.frac).replace(/^0+(?=\d)/, "");
-    return { full: n, core: { int: core, frac: "" }, zeros: 0, places: n.frac.length };
+    const digits = (n.int + n.frac).replace(/^0+(?=\d)/, "");
+    const core = digits.replace(/0+$/, "");
+    if (core === "") return { full: n, core: { int: "0", frac: "" }, zeros: 0, places: n.frac.length }; // 因数是 0
+    const zeros = Math.min(digits.length - core.length, n.frac.length - n.frac.replace(/0+$/, "").length);
+    return { full: n, core: { int: core, frac: "" }, zeros, places: n.frac.length };
   }
   const core = n.int.replace(/0+$/, "");
   if (core === "") return { full: n, core: n, zeros: 0, places: 0 }; // 因数是 0
