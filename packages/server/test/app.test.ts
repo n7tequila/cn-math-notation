@@ -164,3 +164,19 @@ describe("其他路径", () => {
     expect(res.status).toBe(405);
   });
 });
+
+describe("带编号的公式（\\tag）", () => {
+  test("出图不支持编号，返回 400 和明确的提示（不给裁掉的图）", async () => {
+    for (const tex of [String.raw`x\tag{1}`, String.raw`\begin{align}a&=b\tag{2}\end{align}`]) {
+      for (const path of ["/render.svg", "/render.png"]) {
+        const res = await get(path, { tex });
+        expect(res.status).toBe(400);
+        expect(await errorOf(res)).toContain("编号");
+      }
+    }
+  });
+
+  test("没有自动编号：equation 环境不出编号，照常出图", async () => {
+    expect((await get("/render.svg", { tex: String.raw`\begin{equation}x\end{equation}` })).status).toBe(200);
+  });
+});

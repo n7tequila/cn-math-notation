@@ -17,7 +17,7 @@ export interface RenderedImage {
 /** MathJax 的 viewBox 以 1/1000 em 为单位。 */
 const MATHJAX_UNITS_PER_EM = 1000;
 const OPEN_TAG = /^<svg\b[^>]*>/;
-const VIEWBOX = /\bviewBox="([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)"/;
+const VIEWBOX = /\sviewBox="([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)"/;
 
 interface SvgSource {
   readonly svg: string;

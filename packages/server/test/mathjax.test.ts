@@ -58,3 +58,39 @@ describe("本库命令名不与 MathJax 的宏包冲突（全部宏包都已加�
     });
   }
 });
+
+describe("审查发现的问题（2026-11-27）", () => {
+  test("一个请求里的 \\newcommand、\\def、\\definecolor 不影响后面的请求", async () => {
+    const before = await texToSvg(String.raw`\frac12+\pi+\color{red}{x}`);
+    await texToSvg(String.raw`\newcommand{\frac}[2]{EVIL}\def\pi{HACK}\definecolor{red}{RGB}{0,255,0}x`);
+    const after = await texToSvg(String.raw`\frac12+\pi+\color{red}{x}`);
+    expect(after).toBe(before);
+  });
+
+  test("属性值里不留未转义的 < >（输出总是合法 XML）", async () => {
+    for (const tex of [String.raw`\color{<}{x}`, String.raw`\unicode[a<b]{x41}`, String.raw`\enclose{circle}[mathcolor=<]{x}`]) {
+      const svg = await texToSvg(tex).catch(() => "<svg/>");
+      expect(svg).not.toMatch(/="[^"]*[<>][^"]*"/);
+    }
+  });
+
+  test("\\bbox 写的 CSS 不能带外部地址", async () => {
+    const svg = await texToSvg(String.raw`\bbox[background:url(http://evil.example/x.png)]{x}`);
+    expect(svg).not.toContain("url(");
+    expect(svg).not.toContain("evil.example");
+    expect((await texToSvg(String.raw`\bbox[yellow,5px,border:2px solid red]{x}`)).startsWith("<svg")).toBe(true);
+  });
+
+  test("\\mathtip、\\toggle 等交互命令不加载，返回写法错误而不是内部错误", async () => {
+    for (const tex of [String.raw`\mathtip{x}{y}`, String.raw`\texttip{x}{y}`, String.raw`\toggle{a}{b}\endtoggle`]) {
+      await expect(texToSvg(tex)).rejects.toBeInstanceOf(RenderError);
+    }
+  });
+
+  test("\\mmlToken 的 href 不会变成链接，内部的 #MJX 字形引用保留", async () => {
+    const svg = await texToSvg(String.raw`\mmlToken{mi}[href="javascript:alert(1)"]{x}+y`);
+    expect(svg).not.toContain("javascript:");
+    expect(svg).not.toMatch(/\shref="(?!#)/);
+    expect(svg).toMatch(/xlink:href="#MJX-CMN-/);
+  });
+});

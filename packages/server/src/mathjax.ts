@@ -1,6 +1,9 @@
 /**
  * 服务端 MathJax 4：TeX → SVG 字符串。递等式（core 只产出 TeX）和普通公式都走这里；宏包见 tex-packages.ts。
  * SVG 里的字形是路径（fontCache: local），转 PNG 时不依赖字体；只有 \text{} 里的文字是 <text>。
+ *
+ * 每个请求用一份新的 MathJax 文档：\newcommand、\def、\definecolor 定义的东西存在 TeX 输入里，
+ * 共用一份文档时一个请求就能改掉之后所有请求的 \frac 等命令（新建一份约 9 ms）。
  */
 import { mathjax } from "@mathjax/src/js/mathjax.js";
 import { TeX } from "@mathjax/src/js/input/tex.js";
@@ -10,27 +13,25 @@ import { RegisterHTMLHandler } from "@mathjax/src/js/handlers/html.js";
 import "@mathjax/src/js/util/asyncLoad/esm.js";
 import { MathJaxNewcmFont } from "@mathjax/mathjax-newcm-font/js/svg.js";
 import { RenderError } from "./render-error.ts";
+import { sanitizeMathJaxSvg } from "./svg-sanitize.ts";
 import { TEX_PACKAGES } from "./tex-packages.ts";
 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
-const doc = mathjax.document("", {
-  InputJax: new TeX({ packages: [...TEX_PACKAGES] }),
-  OutputJax: new SVG({ fontData: MathJaxNewcmFont, fontCache: "local" }),
-});
+
+function freshDocument() {
+  return mathjax.document("", {
+    InputJax: new TeX({ packages: [...TEX_PACKAGES] }),
+    OutputJax: new SVG({ fontData: MathJaxNewcmFont, fontCache: "local" }),
+  });
+}
 
 const ERROR_ATTR = /data-mjx-error="([^"]*)"/;
 /**
- * MathJax 给字形定义编号 MJX-<计数>-<字体>-<字形>，计数每转换一次加一，同一公式每次输出都不同、没法缓存。
- * 换成固定前缀：后半段已含字体与字形名，同名定义内容一定相同，几张 SVG 内嵌在同一页面里也不冲突。
+ * 带编号（\tag、带编号的环境）时 MathJax 输出宽度 100% 的自适应结构，编号靠外层容器的宽度推到右边，
+ * 单独成图时没有容器，画出来是裁掉的。图片里的编号用处不大，直接报错。
  */
-const GLYPH_ID_COUNTER = /\bMJX-\d+-/g;
-const STABLE_ID_PREFIX = "MJX-CMN-";
-/**
- * MathJax 把公式原文抄进 data-latex 属性，但 lite 适配器不转义属性里的 < >，
- * a<b 这样的公式会得到非法 XML（浏览器打不开、resvg 报错）。图片用不着这个属性，直接去掉。
- */
-const LATEX_ATTR = /\sdata-latex="[^"]*"/g;
+const LABELED = /\sdata-labels="true"/;
 
 function decodeEntities(s: string): string {
   return s
@@ -41,11 +42,12 @@ function decodeEntities(s: string): string {
     .replace(/&amp;/g, "&");
 }
 
-/** TeX → `<svg>…</svg>`；TeX 写错时抛 RenderError（MathJax 的报错文字）。 */
+/** TeX → `<svg>…</svg>`（已清理，见 svg-sanitize.ts）；TeX 写错时抛 RenderError（MathJax 的报错文字）。 */
 export async function texToSvg(tex: string): Promise<string> {
-  const node = await doc.convertPromise(tex, { display: true });
+  const node = await freshDocument().convertPromise(tex, { display: true });
   const svg = adaptor.innerHTML(node);
   const error = ERROR_ATTR.exec(svg);
   if (error !== null) throw new RenderError(`TeX：${decodeEntities(error[1]!)}`);
-  return svg.replace(LATEX_ATTR, "").replace(GLYPH_ID_COUNTER, STABLE_ID_PREFIX);
+  if (LABELED.test(svg)) throw new RenderError("出图不支持公式编号，请去掉 \\tag");
+  return sanitizeMathJaxSvg(svg);
 }

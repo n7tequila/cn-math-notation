@@ -4,7 +4,12 @@
 
 支持本库全部写法（竖式、递等式、短除法、树状图、十字相乘、综合除法），普通 TeX 公式也能出图（交给服务端的 MathJax 4）。
 
-MathJax 加载的宏包与 Typora 一致（`\boldsymbol`、`\cancel`、`\ce`、`physics` 等都能用），只有几个有意不同：能往 SVG 里写 HTML、链接、样式的 `texhtml`、`html`（`\href`、`\style`、`\class`）不加载；未定义的命令返回 400，而不是像 Typora 那样画成红字。清单见 `src/tex-packages.ts`。
+MathJax 加载的宏包与 Typora 一致（`\boldsymbol`、`\cancel`、`\ce`、`physics` 等都能用），只有几个有意不同：能往 SVG 里写 HTML、链接、样式的 `texhtml`、`html`（`\href`、`\style`、`\class`）不加载；未定义的命令返回 400，而不是像 Typora 那样画成红字。清单见 `src/tex-packages.ts`。另外：
+
+- 交互命令（`\mathtip`、`\toggle` 等，`action` 宏包）不加载，图片里没有交互。
+- 公式编号（`\tag`）不支持，返回 400：MathJax 的编号靠外层容器宽度排到右边，单独成图会被裁掉。
+- 每个请求用独立的 MathJax，`\newcommand`、`\def`、`\definecolor` 只在本次请求里有效。
+- 输出的 SVG 会清理：去掉外部链接（如 `\mmlToken` 的 `href`）和带外部地址的 CSS（如 `\bbox[background:url(…)]`），属性里的 `<` `>` 一律转义。
 
 ## 启动
 
