@@ -1,12 +1,13 @@
 /**
  * Typora 插件入口（typora-community-plugin）：在 Typora 的公式里画本库写法。
- * 写法：本库命令单独写成一个公式，如 `$$\shushi{74+88}$$`。
+ * 写法：本库命令单独写成一个公式，如 `$$\shushi{74+88}$$`；也可以和普通公式写在一起（2026-11-27）。
  *
  * MathJax 是按需加载的，改公式设置时还会重新加载，所以定时检查，发现没包过的就包上并重画已有公式。
  */
 import { mentionsFormulaCommand } from "@cn-math-notation/core";
 import { createElementFactory } from "./elements.ts";
 import { isPatched, patchMathJax } from "./mathjax-patch.ts";
+import { registerTexExtension, type MathJaxRuntime } from "./tex-extension.ts";
 import { currentMathJax, LOG_PREFIX, pluginBase, refreshAllMath } from "./typora-env.ts";
 
 const CHECK_INTERVAL_MS = 1000;
@@ -33,7 +34,9 @@ export default class CnMathNotationPlugin extends pluginBase() {
       this.warnIfMissingTooLong();
       return;
     }
-    this.restore = patchMathJax(mj, createElementFactory(document));
+    const mixed = registerTexExtension(mj as MathJaxRuntime);
+    if (!mixed) console.warn(`${LOG_PREFIX} 没能往 MathJax 里注册本库命令（可能是 Typora 升级后内部接口变了）；本库命令仍可单独写成一个公式。`);
+    this.restore = patchMathJax(mj, createElementFactory(document), { mixed });
     if (!refreshAllMath(mentionsFormulaCommand)) {
       console.warn(`${LOG_PREFIX} 没有找到 Typora 的公式刷新入口（可能是 Typora 升级后内部接口变了）；已打开的公式要编辑一下才会重画。`);
     }

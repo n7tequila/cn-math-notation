@@ -1,6 +1,7 @@
 /**
  * 公式 → 独立的 SVG / PNG 图片。
- * - 本库命令（竖式、短除法等）：core 画 SVG；递等式：core 转 TeX 再交 MathJax；普通公式：直接交 MathJax。
+ * - 本库命令（竖式、短除法等）：core 画 SVG；递等式：core 转 TeX 再交 MathJax；普通公式：直接交 MathJax；
+ *   本库命令和普通公式混写：交给注册了本库宏包的 MathJax（cmn-tex.ts）。
  * - 把根元素的尺寸换成像素、写上颜色，使 SVG 单独打开（<img>、文件）时也是对的。
  */
 import { FONT_SIZE, translateFormula } from "@cn-math-notation/core";
@@ -33,6 +34,7 @@ async function sourceSvg(tex: string): Promise<SvgSource> {
     case "tex":
       return { svg: await texToSvg(r.tex), unitsPerEm: MATHJAX_UNITS_PER_EM };
     case "pass":
+    case "mixed":
       return { svg: await texToSvg(tex), unitsPerEm: MATHJAX_UNITS_PER_EM };
     case "error":
       throw new RenderError(r.message);

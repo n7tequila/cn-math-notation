@@ -58,12 +58,9 @@ describe("parseFormulaCommand：识别整个公式是不是一条本库命令", 
     expect(r).toEqual({ kind: "command", family: "dengshi", name: "dengshi", starred: true, options: undefined, body: String.raw`a \} b` });
   });
 
-  test("和其他公式混写时报错，提示单独写", () => {
-    const r = parseFormulaCommand(String.raw`74+88=162 \quad \shushi{74+88}`);
-    expect(r.kind).toBe("error");
-    if (r.kind === "error") expect(r.message).toContain("单独");
-    const after = parseFormulaCommand(String.raw`\shushi{74+88} \quad x`);
-    expect(after.kind).toBe("error");
+  test("和其他公式混写时返回 mixed（2026-11-27 起交给接了本库扩展的 MathJax）", () => {
+    expect(parseFormulaCommand(String.raw`74+88=162 \quad \shushi{74+88}`).kind).toBe("mixed");
+    expect(parseFormulaCommand(String.raw`\shushi{74+88} \quad x`).kind).toBe("mixed");
   });
 
   test("花括号没配对、缺内容时报错", () => {

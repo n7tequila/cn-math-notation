@@ -598,7 +598,7 @@ const { svg, label, widthEm, heightEm } = renderShushiLayout(String.raw`7 4 \\ +
 $$\shushi{403-167}$$
 ```
 
-行内公式 `$\shushi{74+88}$` 也可以。和普通公式写在同一个公式里（如 `74+88=162 \quad \shushi{…}`）暂不支持，会提示“本库命令要单独写成一个公式”。
+行内公式 `$\shushi{74+88}$` 也可以。也能和普通公式写在同一个公式里，如 `74+88=162 \quad \shushi{74+88}`：竖式等上下居中对着公式的中线，递等式的第一行和前面的公式在同一条基线上（如 `S=\dengshi{…}`）。
 
 ### Obsidian、GitHub、微信、Word 等
 
@@ -616,7 +616,10 @@ $$\shushi{403-167}$$
 import { translateFormula } from "@cn-math-notation/core";
 
 const r = translateFormula(String.raw`\shushi{403-167}`);
-// r.kind："svg"（本库画好的 r.rendered）、"tex"（递等式转成的 TeX，交给引擎）、"pass"（普通公式）、"error"（r.message）
+// r.kind："svg"（本库画好的 r.rendered）、"tex"（递等式转成的 TeX，交给引擎）、"pass"（普通公式）、
+//         "mixed"（本库命令和普通公式写在一起）、"error"（r.message）
 ```
 
-本库命令要单独写成一个公式；和其他公式混写时返回 `error`。`translateFormulaMathML` 用于“复制为 MathML”。Typora 插件和出图服务都用这一套。
+`translateFormulaMathML` 用于“复制为 MathML”。Typora 插件和出图服务都用这一套。
+
+混写（`mixed`）要给 MathJax 注册本库命令：`createMathJaxMacros(TexError)` 返回全部命令名对应的 MathJax 宏，放进一个 `CommandMap` 加到 TeX 输入里。竖式等在公式里留一个同样大小的空白盒子，MathJax 排完后用 `inlineEmbeddedSvg(svg)` 在盒子里插入本库画的 SVG；“复制为 MathML”时用 `embedMathML(mml)` 把盒子换成本库的 MathML。接不上时可以用 `MIXED_MESSAGE` 提示本库命令要单独写成一个公式。

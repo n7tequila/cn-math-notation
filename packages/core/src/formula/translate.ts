@@ -17,12 +17,14 @@ import { escapeXml } from "../xml.ts";
 
 export type FormulaTranslation =
   | { readonly kind: "pass" }
+  | { readonly kind: "mixed" }
   | { readonly kind: "svg"; readonly rendered: RenderedSvg }
   | { readonly kind: "tex"; readonly tex: string }
   | { readonly kind: "error"; readonly message: string };
 
 export type FormulaMathMLTranslation =
   | { readonly kind: "pass" }
+  | { readonly kind: "mixed" }
   | { readonly kind: "mathml"; readonly mathml: string }
   | { readonly kind: "tex"; readonly tex: string }
   | { readonly kind: "error"; readonly message: string };

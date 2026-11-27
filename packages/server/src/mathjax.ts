@@ -12,6 +12,7 @@ import { liteAdaptor } from "@mathjax/src/js/adaptors/liteAdaptor.js";
 import { RegisterHTMLHandler } from "@mathjax/src/js/handlers/html.js";
 import "@mathjax/src/js/util/asyncLoad/esm.js";
 import { MathJaxNewcmFont } from "@mathjax/mathjax-newcm-font/js/svg.js";
+import { inlineEmbeddedSvg } from "@cn-math-notation/core";
 import { RenderError } from "./render-error.ts";
 import { sanitizeMathJaxSvg } from "./svg-sanitize.ts";
 import { TEX_PACKAGES } from "./tex-packages.ts";
@@ -19,9 +20,9 @@ import { TEX_PACKAGES } from "./tex-packages.ts";
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 
-function freshDocument() {
+function freshDocument(packages: readonly string[]) {
   return mathjax.document("", {
-    InputJax: new TeX({ packages: [...TEX_PACKAGES] }),
+    InputJax: new TeX({ packages: [...packages] }),
     OutputJax: new SVG({ fontData: MathJaxNewcmFont, fontCache: "local" }),
   });
 }
@@ -43,11 +44,12 @@ function decodeEntities(s: string): string {
 }
 
 /** TeX → `<svg>…</svg>`（已清理，见 svg-sanitize.ts）；TeX 写错时抛 RenderError（MathJax 的报错文字）。 */
-export async function texToSvg(tex: string): Promise<string> {
-  const node = await freshDocument().convertPromise(tex, { display: true });
+export async function texToSvg(tex: string, packages: readonly string[] = TEX_PACKAGES): Promise<string> {
+  const node = await freshDocument(packages).convertPromise(tex, { display: true });
   const svg = adaptor.innerHTML(node);
   const error = ERROR_ATTR.exec(svg);
   if (error !== null) throw new RenderError(`TeX：${decodeEntities(error[1]!)}`);
   if (LABELED.test(svg)) throw new RenderError("出图不支持公式编号，请去掉 \\tag");
-  return sanitizeMathJaxSvg(svg);
+  // 混写时本库嵌的图片换成内联 SVG（resvg 画嵌入图片时不带字体），再统一清理
+  return sanitizeMathJaxSvg(inlineEmbeddedSvg(svg));
 }

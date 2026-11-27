@@ -2,10 +2,12 @@
  * 把本库的 SVG 包成 Typora 认得的 `<mjx-container jax="SVG">`：
  * Typora 的样式（居中、边距、导出时的缓存）都挂在这个元素上。
  */
-import type { RenderedSvg } from "@cn-math-notation/core";
+import { embedMathML, inlineEmbeddedSvg, type RenderedSvg } from "@cn-math-notation/core";
 import type { ElementFactory } from "./mathjax-patch.ts";
 
 const ERROR_COLOR = "#cc0000";
+/** 本库空白盒子携带原命令的属性前缀（core 的 mathjax-embed.ts）；伪造的也由 core 去掉。 */
+export const EMBED_MARKER = "data-cmn-";
 
 function container(doc: Document, display: boolean): HTMLElement {
   const el = doc.createElement("mjx-container");
@@ -30,6 +32,19 @@ export function createElementFactory(doc: Document): ElementFactory {
       span.style.color = ERROR_COLOR;
       span.textContent = message;
       el.appendChild(span);
+      return el;
+    },
+    inline(el: Element): Element {
+      // MathJax 排出的 <mjx-container> 里只有一个 <svg>；在本库留的空白盒子里插入内联 SVG（跟随文字颜色）
+      const svg = el.querySelector?.("svg");
+      if (svg !== null && svg !== undefined && svg.outerHTML.includes(EMBED_MARKER)) {
+        svg.outerHTML = inlineEmbeddedSvg(svg.outerHTML);
+      }
+      // Typora 开了辅助 MathML（给读屏软件）：盒子换成本库的 MathML，否则读到的只是空白
+      const assistive = el.querySelector?.("mjx-assistive-mml");
+      if (assistive !== null && assistive !== undefined && assistive.innerHTML.includes(EMBED_MARKER)) {
+        assistive.innerHTML = embedMathML(assistive.innerHTML);
+      }
       return el;
     },
   };

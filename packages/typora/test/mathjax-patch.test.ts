@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { isPatched, patchMathJax, type ElementFactory, type MathJaxLike } from "../src/mathjax-patch.ts";
+import { registerTexExtension } from "../src/tex-extension.ts";
 
 /** 假 MathJax：把收到的 TeX 记下来，返回带标记的对象。 */
 function fakeMathJax() {
@@ -24,6 +25,7 @@ function fakeMathJax() {
 const factory: ElementFactory = {
   svg: (rendered, display) => ({ ours: rendered.label, display }) as unknown as Element,
   error: (message, display) => ({ error: message, display }) as unknown as Element,
+  inline: (el) => ({ inlined: el }) as unknown as Element,
 };
 
 describe("patchMathJax：包住 Typora 调用的 MathJax 入口", () => {
@@ -95,5 +97,87 @@ describe("patchMathJax：包住 Typora 调用的 MathJax 入口", () => {
     const mj: MathJaxLike = {};
     patchMathJax(mj, factory);
     expect(isPatched(mj)).toBe(false);
+  });
+});
+
+describe("混写（2026-11-27）", () => {
+  const MIXED = String.raw`74+88=162 \quad \shushi{74+88}`;
+
+  test("接上了 TeX 扩展：整条公式交给 MathJax，结果里嵌的图片换成内联 SVG", async () => {
+    const { mj, calls } = fakeMathJax();
+    patchMathJax(mj, factory, { mixed: true });
+    expect(mj.tex2svg!(MIXED)).toEqual({ inlined: { mathjax: MIXED } } as never);
+    expect(await mj.tex2svgPromise!(MIXED)).toEqual({ inlined: { mathjax: MIXED } } as never);
+    expect(mj.tex2mml!(MIXED)).toBe(`<math>${MIXED}</math>`);
+    expect(calls).toEqual([`svg:${MIXED}`, `promise:${MIXED}`, `mml:${MIXED}`]);
+  });
+
+  test("没接上扩展：照旧提示要单独写成一个公式", () => {
+    const { mj, calls } = fakeMathJax();
+    patchMathJax(mj, factory);
+    const el = mj.tex2svg!(MIXED) as unknown as { error: string };
+    expect(el.error).toContain("单独");
+    expect(mj.tex2mml!(MIXED)).toContain("<merror>");
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("registerTexExtension：往 Typora 的 MathJax 里注册本库命令", () => {
+  function fakeRuntime() {
+    const maps: { name: string; macros: string[] }[] = [];
+    const added: unknown[] = [];
+    class CommandMap {
+      constructor(name: string, json: Record<string, unknown>) {
+        maps.push({ name, macros: Object.keys(json) });
+      }
+    }
+    class TexError extends Error {}
+    const tex = { name: "TeX", parseOptions: { handlers: { add: (h: unknown) => added.push(h) } } };
+    const mj = {
+      _: { input: { tex: { TokenMap: { CommandMap }, TexError: { default: TexError } } } },
+      startup: { document: { inputJax: [tex] } },
+    };
+    return { mj, maps, added };
+  }
+
+  test("建一个 CommandMap 放本库全部命令，加到 TeX 输入的宏处理里；重复调用不重复注册", () => {
+    const { mj, maps, added } = fakeRuntime();
+    expect(registerTexExtension(mj)).toBe(true);
+    expect(registerTexExtension(mj)).toBe(true);
+    expect(maps).toHaveLength(1);
+    expect(maps[0]!.macros).toContain("shushi");
+    expect(maps[0]!.macros).toContain("stepeq");
+    expect(added).toEqual([{ macro: [maps[0]!.name] }]);
+  });
+
+  test("找不到内部接口时返回 false（不抛异常）", () => {
+    expect(registerTexExtension({})).toBe(false);
+    const { mj } = fakeRuntime();
+    expect(registerTexExtension({ ...mj, startup: { document: { inputJax: [] } } })).toBe(false);
+    expect(registerTexExtension({ ...mj, _: {} })).toBe(false);
+  });
+});
+
+describe("createElementFactory().inline", () => {
+  test("认得 core 留的空白盒子（标记与 core 一致），替换后不留携带数据的属性", async () => {
+    const { createMathJaxMacros, inlineEmbeddedSvg } = await import("@cn-math-notation/core");
+    const { EMBED_MARKER } = await import("../src/elements.ts");
+    const pushed: { attrs: Record<string, string> }[] = [];
+    const parser = {
+      string: "{74+88}",
+      i: 0,
+      GetStar: () => false,
+      GetBrackets: () => undefined,
+      GetArgument() {
+        this.i = this.string.length;
+        return "74+88";
+      },
+      create: (_k: string, _t: string, _c: unknown[] = [], attrs: Record<string, string> = {}) => ({ attrs }),
+      Push: (n: unknown) => pushed.push(n as { attrs: Record<string, string> }),
+    };
+    createMathJaxMacros(class extends Error {}).shushi!(parser, "\\shushi");
+    const svg = `<svg><g class="cmn-embed" data-cmn-tex="${pushed[0]!.attrs["data-cmn-tex"]}"><g></g></g></svg>`;
+    expect(svg).toContain(EMBED_MARKER);
+    expect(inlineEmbeddedSvg(svg)).not.toContain(EMBED_MARKER);
   });
 });

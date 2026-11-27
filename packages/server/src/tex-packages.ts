@@ -44,6 +44,7 @@ import "@mathjax/src/js/input/tex/unicode/UnicodeConfiguration.js";
 import "@mathjax/src/js/input/tex/units/UnitsConfiguration.js";
 import "@mathjax/src/js/input/tex/upgreek/UpgreekConfiguration.js";
 import "@mathjax/src/js/input/tex/verb/VerbConfiguration.js";
+import { CMN_PACKAGE } from "./cmn-tex.ts";
 
 /** 交给 TeX 输入的宏包名（与上面的导入一一对应）。 */
 export const TEX_PACKAGES: readonly string[] = [
@@ -78,6 +79,7 @@ export const TEX_PACKAGES: readonly string[] = [
   "textmacros",
   "unicode",
   "units",
+  CMN_PACKAGE,
   "upgreek",
   "verb",
 ];

@@ -48,8 +48,8 @@ describe("translateFormula：公式文本 → 本库 SVG / 递等式 TeX / 放�
     expect(translateFormula(String.raw`\dengshi{7-9}`).kind).toBe("tex");
   });
 
-  test("混写报错原样传出", () => {
-    expect(translateFormula(String.raw`x+\shushi{1+1}`).kind).toBe("error");
+  test("混写原样传出 mixed", () => {
+    expect(translateFormula(String.raw`x+\shushi{1+1}`).kind).toBe("mixed");
   });
 });
 

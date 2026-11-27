@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { texToSvg } from "../src/mathjax.ts";
 import { RenderError } from "../src/render-error.ts";
+import { CMN_PACKAGE } from "../src/cmn-tex.ts";
+import { TEX_PACKAGES } from "../src/tex-packages.ts";
 
 describe("texToSvg：宏包与 Typora 的 MathJax 一致", () => {
   const supported: Array<[string, string]> = [
@@ -46,7 +48,8 @@ describe("texToSvg：宏包与 Typora 的 MathJax 一致", () => {
   });
 });
 
-describe("本库命令名不与 MathJax 的宏包冲突（全部宏包都已加载）", () => {
+describe("本库命令名不与 MathJax 的宏包冲突（除本库自己的 cmn 外，全部宏包都已加载）", () => {
+  const OTHERS = TEX_PACKAGES.filter((p) => p !== CMN_PACKAGE);
   const NAMES = [
     "shushi", "vertical", "dengshi", "stepeq", "duanchu", "shortdiv",
     "shuzhuang", "factortree", "shizi", "crossmul", "zonghe", "synthdiv",
@@ -54,9 +57,23 @@ describe("本库命令名不与 MathJax 的宏包冲突（全部宏包都已加�
   ];
   for (const name of NAMES) {
     test(`\\${name}`, async () => {
-      await expect(texToSvg(`\\${name}{1}`)).rejects.toThrow("Undefined control sequence");
+      await expect(texToSvg(`\\${name}{1}`, OTHERS)).rejects.toThrow("Undefined control sequence");
     });
   }
+  test("对照：加上 cmn 后本库命令能认出来，格内标记命令仍未定义", async () => {
+    expect(await texToSvg("x+\\shushi{1+1}")).toContain("<svg");
+    await expect(texToSvg("\\jin{1}")).rejects.toThrow("Undefined control sequence");
+  });
+});
+
+describe("混写的注入（2026-11-27）", () => {
+  test("用 \\mmlToken 伪造本库盒子的属性：插不进别的 SVG", async () => {
+    const evil = btoa('<svg viewBox="0 0 24 24" width="1em" height="1em" onload="alert(1)"><script>alert(2)</script></svg>');
+    const tex = `\\mmlToken{mi}[class="cmn-embed" data-cmn-svg="${evil}"]{x}`;
+    const svg = await texToSvg(tex).catch((e: Error) => e.message);
+    expect(svg).not.toContain("onload");
+    expect(svg).not.toContain("<script");
+  });
 });
 
 describe("审查发现的问题（2026-11-27）", () => {

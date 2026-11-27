@@ -54,4 +54,30 @@ $$\int_0^1 x^2\,dx = \frac{1}{3}$$
 
 $$\shushi{7+}$$
 
+$$x+\shushi{7+}$$
+
+## 混写（0.9.0 起）
+
+竖式上下居中对着公式中线；深色主题下竖式跟着文字变色；“复制为 MathML”里竖式是 mstack。
+
 $$74+88=162 \quad \shushi{74+88}$$
+
+$$\text{商 } \shushi[round=2]{7\div3} \approx 2.33$$
+
+$$x^2+\shizi{x^2+3x+2}=(x+1)(x+2)$$
+
+$$S=\dengshi{2\times(3+4)}$$
+
+行内混写：$1+\shushi{3+4}=8$ 写错了。
+
+## 0.9.0 新写法
+
+$$\dengshi{(3.6-1.6)\times0.25+1\div8}$$
+
+$$\dengshi{2\times(3-5)-(-4)}$$
+
+$$\shushi{3.50\times12}$$
+
+$$\shushi{7\div3}$$
+
+$$\shushi[repeatDot]{1\div7}$$

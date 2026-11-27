@@ -88,10 +88,24 @@ describe("GET /render.svg", () => {
     expect((await errorOf(res)).length).toBeGreaterThan(0);
   });
 
-  test("和普通公式混写返回 400", async () => {
-    const res = await get("/render.svg", { tex: String.raw`x+\shushi{1+1}` });
-    expect(res.status).toBe(400);
-    expect(await errorOf(res)).toContain("单独");
+  test("和普通公式混写（2026-11-27）：竖式作为内联 SVG 嵌在 MathJax 的公式里", async () => {
+    const res = await get("/render.svg", { tex: String.raw`74+88=162 \quad \shushi{74+88}` });
+    expect(res.status).toBe(200);
+    const svg = await res.text();
+    expect(svg).not.toContain("<image");
+    expect(svg).not.toContain("data:image");
+    expect(svg).not.toContain("data-cmn-");
+    expect(svg).toMatch(/<svg width="[\d.]+" height="[\d.]+" preserveAspectRatio="none" fill="currentColor"/);
+    expect(svg).toContain(">7</text>");
+    const png = await get("/render.png", { tex: String.raw`74+88=162 \quad \shushi{74+88}` });
+    expect(png.status).toBe(200);
+  });
+
+  test("混写里的递等式交给 MathJax 接着排；本库命令写错返回 400 和命令名", async () => {
+    expect((await get("/render.svg", { tex: String.raw`y=\dengshi{1+2+3}` })).status).toBe(200);
+    const bad = await get("/render.svg", { tex: String.raw`x+\shushi{7+}` });
+    expect(bad.status).toBe(400);
+    expect(await errorOf(bad)).toContain("\\shushi：");
   });
 
   test("参数错误返回 400", async () => {

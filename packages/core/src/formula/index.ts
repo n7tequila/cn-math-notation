@@ -5,6 +5,8 @@
 export {
   parseFormulaCommand,
   mentionsFormulaCommand,
+  FORMULA_COMMAND_NAMES,
+  MIXED_MESSAGE,
   type FormulaFamily,
   type ParsedFormula,
 } from "./command.ts";
@@ -14,3 +16,11 @@ export {
   type FormulaTranslation,
   type FormulaMathMLTranslation,
 } from "./translate.ts";
+export {
+  createMathJaxMacros,
+  inlineEmbeddedSvg,
+  embedMathML,
+  type MathJaxTexParser,
+  type MathJaxTexErrorClass,
+  type MathJaxMacro,
+} from "./mathjax-embed.ts";
