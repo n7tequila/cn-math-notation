@@ -46,6 +46,12 @@ export interface StyleOptions {
   readonly pointColumn: boolean;
   /** 多项式竖式用分离系数法：只写系数，缺项写 0（默认关）。 */
   readonly coefficients: boolean;
+  /** 商是循环小数时除到第几位小数（语义式除法用；不写则除到循环节完整一遍且至少 3 位）。 */
+  readonly places?: number;
+  /** 求商的近似值：保留几位小数（语义式除法用；竖式多除一位，下面写“≈ 近似值”）。 */
+  readonly round?: number;
+  /** 循环小数的商用循环点代替省略号（语义式除法用，默认关）。 */
+  readonly repeatDot: boolean;
 }
 
 export const DEFAULT_STYLE: StyleOptions = {
@@ -64,7 +70,13 @@ export const DEFAULT_STYLE: StyleOptions = {
   remainder: false,
   pointColumn: false,
   coefficients: false,
+  repeatDot: false,
 };
+
+/** places 上限【推论】：竖式再长就不适合手写了。 */
+export const MAX_PLACES = 30;
+/** round 上限【推论】。 */
+export const MAX_ROUND = 10;
 
 const BOOLEAN_KEYS = [
   "guides",
@@ -78,6 +90,7 @@ const BOOLEAN_KEYS = [
   "remainder",
   "pointColumn",
   "coefficients",
+  "repeatDot",
 ] as const;
 
 export class OptionError extends Error {
@@ -131,5 +144,13 @@ function applyOption(opts: StyleOptions, key: string, value: string): StyleOptio
     }
     return { ...opts, process: value };
   }
+  if (key === "places") return { ...opts, places: intOption(key, value, 1, MAX_PLACES) };
+  if (key === "round") return { ...opts, round: intOption(key, value, 0, MAX_ROUND) };
   throw new OptionError(`未知选项 "${key}"`);
+}
+
+function intOption(key: string, value: string, min: number, max: number): number {
+  const n = /^\d+$/.test(value) ? Number(value) : NaN;
+  if (!(n >= min && n <= max)) throw new OptionError(`${key} 要写 ${min}～${max} 的整数，收到 "${value}"`);
+  return n;
 }

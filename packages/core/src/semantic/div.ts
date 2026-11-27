@@ -80,6 +80,7 @@ function quotientCells(quotient: ReadonlyMap<number, number>): Cell[] {
 export function divLayout(e: Expression, style: StyleOptions, process = true): Layout {
   const integers = e.a.frac === "" && e.b.frac === "";
   const exact = integers && BigInt(e.b.int) !== 0n && BigInt(e.a.int) % BigInt(e.b.int) === 0n;
+  if (style.remainder && style.round !== undefined) throw new ExpressionError("remainder 与 round 不能同时用");
   const remainderStyle = integers && (style.remainder || e.remainder !== undefined || exact || BigInt(e.b.int) === 0n);
   return remainderStyle ? integerDivLayout(e, process) : decimalDivLayout(e, style, process);
 }

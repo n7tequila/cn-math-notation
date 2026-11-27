@@ -6,14 +6,17 @@
  * 设计依据：docs/design/2026-11-19-设计草案.md §3、§11。
  */
 
-export type CellMark = "tui" | "err" | "hong" | "bu" | "hua";
+/** xun：循环小数的循环点，画在数字正上方（repeatDot）。 */
+export type CellMark = "tui" | "err" | "hong" | "bu" | "hua" | "xun";
 
 export type CellContent =
   | { readonly kind: "digit"; readonly text: string }
   | { readonly kind: "point" }
   /** 多项式竖式的一项（如 +3x、x²），整项占一格；列号 = 次数（设计草案 §5.7）。 */
   | { readonly kind: "term"; readonly text: string }
-  | { readonly kind: "blank" };
+  | { readonly kind: "blank" }
+  /** 循环小数商后面的省略号（占一格）。 */
+  | { readonly kind: "ellipsis" };
 
 /**
  * 写在这一格右边空隙里的小数点（小数乘除法：小数点不占列，设计草案 §11.2）。
@@ -31,7 +34,8 @@ export interface Cell {
   readonly pointColor?: string;
 }
 
-export type Operator = "+" | "-" | "×" | "÷";
+/** ≈：求商的近似值时，竖式下方“≈ 近似值”一行（round）。 */
+export type Operator = "+" | "-" | "×" | "÷" | "≈";
 
 /** 普通数字行（加数、部分积、结果、除法各步）。 */
 export interface DigitRow {

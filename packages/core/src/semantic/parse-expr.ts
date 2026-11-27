@@ -3,11 +3,14 @@
  * 可带孩子的答案：`403-167=346`、`71÷4=17……3`（余数可写 `……`、`...` 或 `r`）。
  */
 import type { Operator } from "../model.ts";
+
+/** 算式里的四则运算符（≈ 只出现在近似值那一行）。 */
+type ArithOperator = Exclude<Operator, "≈">;
 import { ExpressionError, parseNum, type Num } from "./numbers.ts";
 
 export interface Expression {
   readonly a: Num;
-  readonly op: Operator;
+  readonly op: ArithOperator;
   readonly b: Num;
   /** 孩子写的答案（除法为商）。 */
   readonly answer?: Num;
@@ -15,7 +18,7 @@ export interface Expression {
   readonly remainder?: Num;
 }
 
-const OPERATORS: readonly [RegExp, Operator][] = [
+const OPERATORS: readonly [RegExp, ArithOperator][] = [
   [/^(?:\+)/, "+"],
   [/^(?:-|−)/, "-"],
   [/^(?:\\times|×|\*|x|X)/, "×"],

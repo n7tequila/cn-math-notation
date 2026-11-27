@@ -170,6 +170,11 @@ function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
     parts.push(text(x, baseline, cell.content.text, FONT_SIZE, fill));
   } else if (cell.content.kind === "point") {
     parts.push(`<circle cx="${fmt(x)}" cy="${fmt(baseline - 1.5)}" r="1.8" fill="${cell.color ?? COLORS.ink}"/>`);
+  } else if (cell.content.kind === "ellipsis") {
+    parts.push(text(x, baseline, "…", FONT_SIZE, cell.color ?? COLORS.ink));
+  }
+  if (marks.has("xun")) {
+    parts.push(`<circle class="cmn-xun" cx="${fmt(x)}" cy="${fmt(top + 3)}" r="1.8" fill="${cell.color ?? COLORS.ink}"/>`);
   }
   if (cell.point !== undefined) parts.push(drawGapPoint(x + geo.colWidth(cell.col) / 2, baseline, cell.point, cell.pointColor));
   if (marks.has("tui")) parts.push(`<circle class="cmn-tui" cx="${fmt(x)}" cy="${fmt(top + 1)}" r="2.6" fill="${COLORS.teach}"/>`);
@@ -186,7 +191,7 @@ function drawDigitCell(geo: Geometry, cell: Cell, top: number): string {
   return parts.join("");
 }
 
-const OPERATOR_GLYPH: Readonly<Record<Operator, string>> = { "+": "+", "-": "−", "×": "×", "÷": "÷" };
+const OPERATOR_GLYPH: Readonly<Record<Operator, string>> = { "+": "+", "-": "−", "×": "×", "÷": "÷", "≈": "≈" };
 
 function drawOperator(geo: Geometry, row: DigitRow, top: number, style: StyleOptions): string {
   if (row.operator === undefined) return "";
@@ -263,13 +268,19 @@ function drawGuides(geo: Geometry, top: number, bottom: number): string {
 }
 
 export function describe(layout: Layout): string {
-  const words: Record<Operator, string> = { "+": "加", "-": "减", "×": "乘", "÷": "除以" };
+  const words: Record<Operator, string> = { "+": "加", "-": "减", "×": "乘", "÷": "除以", "≈": "约等于" };
   const lines = layout.rows.flatMap((row) => {
     if (row.kind !== "digits") return [];
     const digits = row.cells
       .map((c) => {
         const body =
-          c.content.kind === "digit" || c.content.kind === "term" ? c.content.text : c.content.kind === "point" ? "点" : "";
+          c.content.kind === "digit" || c.content.kind === "term"
+            ? c.content.text
+            : c.content.kind === "point"
+              ? "点"
+              : c.content.kind === "ellipsis"
+                ? "……"
+                : "";
         return c.point === "dot" || c.point === "hong" ? `${body}点` : body;
       })
       .join("");

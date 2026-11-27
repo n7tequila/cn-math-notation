@@ -35,7 +35,7 @@ export interface MathMLOptions {
 
 
 const EMPTY = "<mrow/>";
-const OPERATOR_TEXT: Readonly<Record<Operator, string>> = { "+": "+", "-": "−", "×": "×", "÷": "÷" };
+const OPERATOR_TEXT: Readonly<Record<Operator, string>> = { "+": "+", "-": "−", "×": "×", "÷": "÷", "≈": "≈" };
 
 /** 全竖式的列，从高位到低位（有小数点时含 -0.5 列）。 */
 function allColumns(layout: Layout): number[] {
@@ -71,7 +71,9 @@ function cellElement(cell: Cell): string {
   if (color !== undefined) attrs.push(`mathcolor="${escapeXml(color)}"`);
   if (marks.has("err")) attrs.push(`mathbackground="${COLORS.errBg}"`);
   let el: string;
-  if (cell.content.kind === "term") {
+  if (cell.content.kind === "ellipsis") {
+    el = "<mo>…</mo>";
+  } else if (cell.content.kind === "term") {
     const term = termToMathML(cell.content.text);
     el = attrs.length > 0 ? `<mrow ${attrs.join(" ")}>${term}</mrow>` : term;
   } else {
@@ -80,6 +82,7 @@ function cellElement(cell: Cell): string {
   }
   if (marks.has("bu")) el = `<menclose notation="box" mathcolor="${COLORS.teach}">${el}</menclose>`;
   if (marks.has("hua")) el = `<menclose notation="updiagonalstrike">${el}</menclose>`;
+  if (marks.has("xun")) el = `<mover accent="true">${el}<mo>˙</mo></mover>`;
   return cell.point === undefined ? el : `<mrow>${el}${pointElement(cell.point)}</mrow>`;
 }
 
