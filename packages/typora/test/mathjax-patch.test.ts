@@ -188,3 +188,66 @@ test("混写开关可以是函数：注册稍后成功时立即生效", () => {
   registered = true;
   expect(mj.tex2svg!(MIXED_TEX)).toEqual({ inlined: { mathjax: MIXED_TEX } } as never);
 });
+
+describe("createElementFactory().inline：MathJax 4 自动换行，一个公式拆成好几个 <svg>", () => {
+  /** 最小的假 DOM：只实现 inline 用到的方法。 */
+  class FakeNode {
+    readonly attrs = new Map<string, string>();
+    readonly inserted: string[] = [];
+    innerHTML = "";
+    constructor(
+      readonly tag: string,
+      readonly children: FakeNode[] = [],
+      attrs: Record<string, string> = {},
+      public parent: FakeNode | null = null,
+    ) {
+      for (const [k, v] of Object.entries(attrs)) this.attrs.set(k, v);
+      for (const c of children) c.parent = this;
+    }
+    all(): FakeNode[] {
+      return this.children.flatMap((c) => [c, ...c.all()]);
+    }
+    querySelectorAll(sel: string): FakeNode[] {
+      if (sel.includes("[data-cmn")) return this.all().filter((n) => n.attrs.has("data-cmn-tex") || n.attrs.has("data-cmn-svg"));
+      return this.all().filter((n) => n.tag === sel);
+    }
+    querySelector(sel: string): FakeNode | null {
+      return this.querySelectorAll(sel)[0] ?? null;
+    }
+    closest(sel: string): FakeNode | null {
+      for (let n: FakeNode | null = this; n !== null; n = n.parent) if (n.tag === sel) return n;
+      return null;
+    }
+    getAttribute(k: string): string | null {
+      return this.attrs.get(k) ?? null;
+    }
+    removeAttribute(k: string): void {
+      this.attrs.delete(k);
+    }
+    insertAdjacentHTML(_where: string, html: string): void {
+      this.inserted.push(html);
+    }
+  }
+
+  test("每一段里的盒子都填上；辅助 MathML 里的盒子换成本库的 MathML", async () => {
+    const { createElementFactory } = await import("../src/elements.ts");
+    const b64 = (t: string) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
+    const box1 = new FakeNode("g", [], { "data-cmn-tex": b64("\\shushi{3+4}") });
+    const box2 = new FakeNode("g", [], { "data-cmn-tex": b64("\\shushi{1+2}") });
+    const row = new FakeNode("mrow", [], { "data-cmn-tex": b64("\\shushi{3+4}") });
+    const el = new FakeNode("mjx-container", [
+      new FakeNode("svg", [new FakeNode("g")]),
+      new FakeNode("mjx-break"),
+      new FakeNode("svg", [box1]),
+      new FakeNode("mjx-break"),
+      new FakeNode("svg", [box2]),
+      new FakeNode("mjx-assistive-mml", [new FakeNode("math", [row])]),
+    ]);
+    createElementFactory({} as Document).inline(el as unknown as Element);
+    expect(box1.inserted[0]).toContain(">7</text>");
+    expect(box2.inserted[0]).toContain(">3</text>");
+    expect(box1.attrs.has("data-cmn-tex")).toBe(false);
+    expect(row.innerHTML).toContain("<mstack");
+    expect(row.inserted).toEqual([]);
+  });
+});

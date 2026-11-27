@@ -23,21 +23,17 @@ function takeCommand(node: Element): string | null {
   return data;
 }
 
-function inlineSvgBoxes(svg: Element): void {
-  for (const g of svg.querySelectorAll(CMN_SELECTOR)) {
-    const data = takeCommand(g);
-    const content = data === null ? "" : embeddedSvgFor(data);
-    if (content !== "") g.insertAdjacentHTML("afterbegin", content);
-  }
+function fillSvgBox(g: Element): void {
+  const data = takeCommand(g);
+  const content = data === null ? "" : embeddedSvgFor(data);
+  if (content !== "") g.insertAdjacentHTML("afterbegin", content);
 }
 
 /** 辅助 MathML（给读屏软件）：盒子换成本库的 MathML，否则读到的只是空白。 */
-function inlineMathMLBoxes(assistive: Element): void {
-  for (const row of assistive.querySelectorAll(CMN_SELECTOR)) {
-    const data = takeCommand(row);
-    const mathml = data === null ? undefined : embeddedMathMLFor(data);
-    if (mathml !== undefined) row.innerHTML = mathml;
-  }
+function fillMathMLBox(row: Element): void {
+  const data = takeCommand(row);
+  const mathml = data === null ? undefined : embeddedMathMLFor(data);
+  if (mathml !== undefined) row.innerHTML = mathml;
 }
 
 function container(doc: Document, display: boolean): HTMLElement {
@@ -66,11 +62,12 @@ export function createElementFactory(doc: Document): ElementFactory {
       return el;
     },
     inline(el: Element): Element {
-      // MathJax 排出的 <mjx-container> 里只有一个 <svg>；在本库留的空白盒子里插入内联 SVG（跟随文字颜色）
-      const svg = el.querySelector?.("svg");
-      if (svg) inlineSvgBoxes(svg);
-      const assistive = el.querySelector?.("mjx-assistive-mml");
-      if (assistive) inlineMathMLBoxes(assistive);
+      // MathJax 4 会自动换行：一个公式可能拆成好几个 <svg>（中间夹着 <mjx-break>），所以处理容器里的所有盒子。
+      // 在辅助 MathML（给读屏软件）里的换成本库的 MathML，其余在本库留的空白盒子里插入内联 SVG。
+      for (const node of el.querySelectorAll?.(CMN_SELECTOR) ?? []) {
+        if (node.closest("mjx-assistive-mml") === null) fillSvgBox(node);
+        else fillMathMLBox(node);
+      }
       return el;
     },
   };

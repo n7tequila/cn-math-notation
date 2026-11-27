@@ -4,7 +4,7 @@
  * - 竖式等：本库画好 SVG，先在公式里放一个同样大小的空白盒子 <mrow class="cmn-embed"><mspace/></mrow>，
  *   上下居中对着公式中线；原命令以 base64 放在盒子的 data-cmn-tex 属性里。不用图片字形 mglyph：Typora 的 MathJax 加载了 ui/safe，
  *   会删掉 data: 开头的图片地址（实测 MathJax 随后在 mglyph 上抛 RangeError）；
- * - 递等式：转成 TeX 放回输入，由 MathJax 接着排；第一行对齐基线【推论】；
+ * - 递等式：转成 TeX 放回输入，由 MathJax 接着排；第一行对齐基线，第 2 行起的等号对齐前面的“=”；
  * - 写法错误：抛 MathJax 的 TexError，显示成公式里的红字。
  * MathJax 排完后用 inlineEmbeddedSvg 按 data-cmn-tex 重新画、在盒子里插入内联 SVG（跟随文字颜色，PNG 转换器也能用内置字体）。
  * 不把 SVG 放进属性里带过去：Typora 的 \data{…} 能伪造 data 属性，带过去的 SVG 不可信；重新画最多只能画出合法的本库命令。
@@ -73,8 +73,7 @@ function macro(TexError: MathJaxTexErrorClass): MathJaxMacro {
         return;
       }
       case "tex":
-        // 递等式第一行对齐基线【推论】：S=\dengshi{…} 读作“S=第一行”，后面各步往下排
-        parser.string = `{${r.tex.replace(/^\\begin\{aligned\}/, "\\begin{aligned}[t]")}}${parser.string.slice(parser.i)}`;
+        parser.string = `{${hangingDengshi(r.tex)}}${parser.string.slice(parser.i)}`;
         parser.i = 0;
         return;
       case "error":
@@ -84,6 +83,17 @@ function macro(TexError: MathJaxTexErrorClass): MathJaxMacro {
         throw new TexError("CmnError", `${name}：无法识别`);
     }
   };
+}
+
+/**
+ * 混写里的递等式：第一行对齐基线（S=\dengshi{…} 读作“S=第一行”），第 2 行起的等号挂在左边、
+ * 对齐前面那个“=”（维护者 2026-11-27 指出不对齐）。\llap 宽度为 0、右对齐，里面的 {}={} 带着
+ * 关系符两边的间距，所以这个等号正好落在“S =”的等号下面。单独写时等号仍在算式左边的一列里。
+ */
+function hangingDengshi(tex: string): string {
+  return tex
+    .replace(/^\\begin\{aligned\}/, "\\begin{aligned}[t]")
+    .replace(/(\\\\\[[^\]]*\])=\{\}&/g, "$1&\\llap{{}={}}");
 }
 
 /** 本库全部命令名（不带反斜杠）→ MathJax 宏。 */

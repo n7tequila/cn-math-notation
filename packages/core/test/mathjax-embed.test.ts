@@ -112,7 +112,7 @@ describe("MathJax 宏", () => {
     macros.dengshi!(parser, "\\dengshi");
     expect(parser.pushed).toEqual([]);
     expect(parser.i).toBe(0);
-    expect(parser.string).toStartWith("{\\begin{aligned}[t]");
+    expect(parser.string).toStartWith("{\\begin{aligned}[t]&1+2+3\\\\[6pt]&\\llap{{}={}}3+3");
     expect(parser.string).toEndWith("} = 6");
   });
 

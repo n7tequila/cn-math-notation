@@ -66,6 +66,15 @@ describe("本库命令名不与 MathJax 的宏包冲突（除本库自己的 cmn
   });
 });
 
+describe("混写只用 Typora 默认就有的命令（2026-11-27：\\mathllap 在 Typora 里未定义）", () => {
+  const TYPORA_DEFAULT = ["base", "ams", "newcommand", "configmacros", CMN_PACKAGE];
+  test("递等式、竖式混写在只加载默认宏包时也能排", async () => {
+    for (const tex of [String.raw`S=\dengshi{2\times(3+4)}`, String.raw`S=\dengshi[steps=1]{2\times3+1}`, String.raw`1+\shushi{3+4}=7`]) {
+      expect(await texToSvg(tex, TYPORA_DEFAULT)).toContain("<svg");
+    }
+  });
+});
+
 describe("混写的注入（2026-11-27）", () => {
   test("用 \\mmlToken 伪造本库盒子的属性：插不进别的 SVG", async () => {
     const evil = btoa('<svg viewBox="0 0 24 24" width="1em" height="1em" onload="alert(1)"><script>alert(2)</script></svg>');
