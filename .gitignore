@@ -4,3 +4,4 @@ dist/
 .DS_Store
 out/
 packages/typora/plugin.zip
+CLAUDE.local.md
