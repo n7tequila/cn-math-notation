@@ -1,6 +1,6 @@
 {
   "name": "@cn-math-notation/typora",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "cn-math-notation 的 Typora 插件（typora-community-plugin）：在 Typora 的公式块里画竖式等课本写法",
   "license": "MIT",

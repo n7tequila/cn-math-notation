@@ -1,6 +1,6 @@
 {
   "name": "@cn-math-notation/katex",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "cn-math-notation 的 KaTeX 插件：注册 \\shushi 等命令，画出课本写法的竖式",
   "license": "MIT",
   "author": "n7tequila",
@@ -42,7 +42,7 @@
     "prepublishOnly": "rm -rf dist && tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@cn-math-notation/core": "^0.8.1"
+    "@cn-math-notation/core": "^0.9.0"
   },
   "peerDependencies": {
     "katex": "~0.19.1"
